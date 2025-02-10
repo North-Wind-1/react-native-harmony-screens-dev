@@ -1,4 +1,8 @@
 import {
+  AnyJSBundleProvider,
+  ComponentBuilderContext,
+  FileJSBundleProvider,
+  ResourceJSBundleProvider,
   RNApp,
   RNOHErrorDialog,
   MetroJSBundleProvider,
@@ -7,7 +11,19 @@ import {
   RNOHLogger
 } from "@rnoh/react-native-openharmony";
 import { getRNOHPackages } from '../PackageProvider'
+import RNNScreen, { componentBuilder } from "@rnoh/react-native-openharmony-screens"
 
+@Builder
+export function buildCustomRNComponent(ctx: ComponentBuilderContext) {
+  // There seems to be a problem with the placement of ArkTS components in mixed mode. Nested Stack temporarily avoided.  
+  Stack() {
+    componentBuilder(ctx)
+  }
+  .position({ x: 0, y: 0 })
+
+}
+
+const wrappedCustomRNComponentBuilder = wrapBuilder(buildCustomRNComponent)
 
 @Entry
 @Component
@@ -42,10 +58,25 @@ struct Index {
             name: "app_name",
             createRNPackages: getRNOHPackages,
             enableCAPIArchitecture: true,
+            arkTsComponentNames: ["RNSScreen", "RNSFullWindowOverlay", "RNSModalScreen", "RNSScreenContainer", "RNSScreenNavigationContainer", "RNSScreenStack", "RNSScreenStackHeaderSubview", "RNSSearchBar", "RNSScreenStackHeaderConfig", "RNSScreenStackHeaderSubview"],
           },
           appKey: "app_name",
+          wrappedCustomRNComponentBuilder: wrappedCustomRNComponentBuilder,
           jsBundleProvider: new TraceJSBundleProviderDecorator(
-            new MetroJSBundleProvider(),
+            new AnyJSBundleProvider([
+              new MetroJSBundleProvider(),
+              /**
+              * NOTE: to load the bundle from file, place it in
+              * `/data/app/el2/100/base/com.rnoh.tester/files/bundle.harmony.js`
+              * on your device. The path mismatch is due to app sandboxing on HarmonyOS
+              */
+              new FileJSBundleProvider('/data/storage/el2/base/files/bundle.harmony.js'),
+              /**
+              * NOTE: The HBC format is recommended in a production environment. HBC is optimized pre-compiled bytecode.
+              */
+              new ResourceJSBundleProvider(this.rnohCoreContext.uiAbilityContext.resourceManager, 'hermes_bundle.hbc'),
+              new ResourceJSBundleProvider(this.rnohCoreContext.uiAbilityContext.resourceManager, 'bundle.harmony.js')
+            ]),
             this.rnohCoreContext.logger),
         })
       }

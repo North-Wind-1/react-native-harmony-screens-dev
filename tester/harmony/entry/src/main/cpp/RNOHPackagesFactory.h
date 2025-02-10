@@ -6,13 +6,14 @@
 #pragma once
 #include "RNOH/Package.h"
 #include "RnohReactNativeHarmonyGestureHandlerPackage.h"
-#include "RnohReactNativeHarmonySafeAreaContextPackage.h"
+// #include "RnohReactNativeHarmonySafeAreaContextPackage.h"
+#include "SafeAreaViewPackage.h"
 #include "RnohReactNativeHarmonyScreensPackage.h"
 
 std::vector<rnoh::Package::Shared> createRNOHPackages(const rnoh::Package::Context &ctx) {
   return {
     std::make_shared<rnoh::RnohReactNativeHarmonyGestureHandlerPackage>(ctx),
-    std::make_shared<rnoh::RnohReactNativeHarmonySafeAreaContextPackage>(ctx),
+    std::make_shared<rnoh::SafeAreaViewPackage>(ctx),
     std::make_shared<rnoh::RnohReactNativeHarmonyScreensPackage>(ctx),
   };
 }
