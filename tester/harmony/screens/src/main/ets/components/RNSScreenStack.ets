@@ -24,8 +24,10 @@ export struct RNSScreenStack {
   @Watch("onDescriptorChange") @State descriptor: RNSScreenStackDescriptor = {} as RNSScreenStackDescriptor
 
   updateStack(newChildren: number[]) {
-    // if (!newChildren) {
-    /*if (!newChildren || this.stack.length === 0) {
+    if (!newChildren || this.stack.length === 0) {
+      for (let i = 0; i < newChildren.length; i++) {
+        this.stackController.pushPathByName(newChildren[i].toString(), null)
+      }
       return;
     }
 
@@ -51,9 +53,6 @@ export struct RNSScreenStack {
       for (let i = differentElementIndex; i < newChildren.length; i++) {
         this.stackController.pushPathByName(newChildren[i].toString(), null)
       }
-    }*/
-    for (let i = 0; i < newChildren.length; i++) {
-      this.stackController.pushPathByName(newChildren[i].toString(), null)
     }
   }
 

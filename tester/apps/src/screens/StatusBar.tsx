@@ -35,6 +35,8 @@ const FirstScreen = ({ navigation }: FirstScreenProps): React.JSX.Element => {
   const [statusBarTranslucent, setStatusBarTranslucent] = useState(true);
   const [statusBarBackgroundColor, setStatusBarBackgroundColor] =
     useState('gray');
+  const [statusBarColor, setStatusBarColor] =
+    useState('#333333');
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -43,6 +45,7 @@ const FirstScreen = ({ navigation }: FirstScreenProps): React.JSX.Element => {
       statusBarAnimation,
       statusBarTranslucent,
       statusBarBackgroundColor,
+      statusBarColor,
     });
   }, [
     navigation,
@@ -51,6 +54,7 @@ const FirstScreen = ({ navigation }: FirstScreenProps): React.JSX.Element => {
     statusBarAnimation,
     statusBarTranslucent,
     statusBarBackgroundColor,
+    statusBarColor,
   ]);
 
   return (
@@ -80,10 +84,11 @@ const FirstScreen = ({ navigation }: FirstScreenProps): React.JSX.Element => {
       />
       <SettingsPicker<string>
         label="Status bar color"
-        value={statusBarBackgroundColor}
-        onValueChange={setStatusBarBackgroundColor}
-        items={['red', 'green', 'blue', 'gray']}
+        value={statusBarColor}
+        onValueChange={setStatusBarColor}
+        items={['#ff0000', '#00ff00', '#0000ff', '#333333']}
       />
+      {/* items={['red', 'green', 'blue', 'gray']} */}
       <Button
         title="Go to second screen"
         onPress={() => navigation.navigate('Second')}

@@ -144,15 +144,19 @@ interface MainScreenProps {
 const MainScreen = ({navigation}: MainScreenProps): React.JSX.Element => {
   const {toggleTheme} = useContext(ThemeToggle);
   const isDark = useTheme().dark;
+  const [isRTL, setIsRTL] = useState(I18nManager.isRTL);
 
   return (
     <ScrollView testID="root-screen-examples-scrollview">
       <SettingsSwitch
         style={styles.switch}
         label="Right to left"
-        value={I18nManager.isRTL}
+        value={isRTL}
         onValueChange={() => {
-          I18nManager.forceRTL(!I18nManager.isRTL);
+          I18nManager.forceRTL(!I18nManager.isRTL);          
+          setTimeout(()=>{
+            setIsRTL(I18nManager.isRTL);
+          }, 50);
         }}
       />
       <SettingsSwitch

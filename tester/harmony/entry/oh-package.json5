@@ -5,6 +5,7 @@
   "description": "example description",
   "version": "1.0.0",
   "dependencies": {
-    "@rnoh/react-native-openharmony-screens": "file:../screens"
+//    "@rnoh/react-native-openharmony-screens": "file:../screens"
+    "@rnoh/react-native-openharmony-screens": "file:./screens.har"
   }
 }

@@ -141,23 +141,24 @@ const SettingsScreen = ({
           if (item === 'left' && backButtonVisible) {
             // to make header's item ideally on the left side,
             // we need to hide the back button.
-            toast.push({
-              message: 'Hiding back button...',
-              backgroundColor: 'orange',
-            });
+            // toast.push({
+            //   message: 'Hiding back button...',
+            //   backgroundColor: 'orange',
+            // });
             setBackButtonVisible(false);
           }
           if (
             item === 'center' &&
-            Platform.OS === 'android' &&
+            // Platform.OS === 'android' && // todo edit
+            Platform.OS !== 'ios' &&
             headerTitleAlign !== 'center'
           ) {
             // on Android, we can't have a header item in the center
             // and a title at the same time
-            toast.push({
-              message: 'Changing title alignment to center...',
-              backgroundColor: 'orange',
-            });
+            // toast.push({
+            //   message: 'Changing title alignment to center...',
+            //   backgroundColor: 'orange',
+            // });
             setHeaderTitleAlign('center');
           }
           setHeaderItem(item);

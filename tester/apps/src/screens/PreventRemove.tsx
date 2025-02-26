@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, TextInput, Platform, Alert, ScrollView, Text } from 'react-native';
-import { usePreventRemove } from '@react-navigation/native';
+// import { usePreventRemove } from '@react-navigation/native';
+import { UNSTABLE_usePreventRemove as usePreventRemove } from '@react-navigation/core';
 import {
   createNativeStackNavigator,
   NativeStackNavigationProp,
@@ -64,7 +65,7 @@ const PreventRemoveScreen = ({
         <TextInput
           autoFocus
           value={text}
-          placeholder="Type something to prevent removeâ€¦"
+          placeholder="Type something to prevent removeâ€?"
           placeholderTextColor="#999"
           onChangeText={setText}
         />

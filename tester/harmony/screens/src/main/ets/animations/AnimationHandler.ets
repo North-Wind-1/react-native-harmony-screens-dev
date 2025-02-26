@@ -51,6 +51,12 @@ function getAnimationConfigurationObject(animationType: string): AnimationConfig
       return noneAnimation;
     case 'fade':
       return fade;
+    case 'default': // todo add
+      return slideFromRight;
+    case 'flip':
+      return slideFromRight;
+    case 'simple_push':
+      return slideFromRight;
   }
 
   // TODO: create/import from specs the type for animationType variable
@@ -68,7 +74,7 @@ export function getNewAnimationState(animationType: string, animationEvent: Anim
     case AnimationHandlerEvent.ATTACH_START:
       return animationConfig.attachAnimationStartState;
     case AnimationHandlerEvent.ATTACH_END:
-      return animationConfig.detachAnimationStartState;
+      return animationConfig.attachAnimationEndState; // todo detachAnimationStartState
     case AnimationHandlerEvent.DETACH_START:
       return animationConfig.detachAnimationStartState;
     case AnimationHandlerEvent.DETACH_END:

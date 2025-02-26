@@ -5,7 +5,7 @@ const slideFromBottom: AnimationConfiguration = {
     duration: 400
   },
   attachAnimationStartState: {
-    translateYValue: '100%'
+    translateYValue: '-100%'
   },
   attachAnimationEndState: {
     translateYValue: '0'
@@ -14,10 +14,10 @@ const slideFromBottom: AnimationConfiguration = {
     translateYValue: '0'
   },
   detachAnimationEndState: {
-    translateYValue: '100%'
+    translateYValue: '-100%'
   },
   showAnimationStartState: {
-    translateYValue: '0'
+    translateYValue: '100%'
   },
   showAnimationEndState: {
     translateYValue: '0'
@@ -26,7 +26,7 @@ const slideFromBottom: AnimationConfiguration = {
     translateYValue: '0'
   },
   hideAnimationEndState: {
-    translateYValue: '0'
+    translateYValue: '100%'
   }
 }
 

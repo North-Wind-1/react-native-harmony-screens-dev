@@ -2,7 +2,7 @@ import { AnimationConfiguration } from "./AnimationHandler";
 
 const ios: AnimationConfiguration = {
   animationConfiguration: {
-    duration: 200,
+    duration: 400,
     curve: Curve.Friction
   },
   attachAnimationStartState: {

@@ -20,7 +20,13 @@ export struct RNSSearchBar {
   @State placeholder: string | undefined = undefined;
   @State backgroundColorValue: string | undefined = undefined;
   @State fontColor: string | undefined = undefined
-  @State type: InputType | undefined = undefined
+  // @State type: InputType | undefined = undefined
+  @State type: SearchType | undefined = undefined
+  @State hintTextColor: string | undefined = undefined
+  @State cancelIconVisiblilty: Visibility = Visibility.Visible
+  @State cancelButtonText: string | undefined = undefined;
+  @State headerIconColor: string | undefined = undefined
+  private cleanupCommandCallback?: () => void = undefined;
 
   aboutToAppear() {
     this.eventEmitter = new RNC.RNSSearchBar.EventEmitter(this.ctx.rnInstance, this.tag)
@@ -33,6 +39,39 @@ export struct RNSSearchBar {
     ))
     this.updateState()
     // TODO: event handlers, like cleanText
+
+    this.cleanupCommandCallback = this.ctx.componentCommandReceiver.registerCommandCallback(
+      this.tag,
+      (command, args:ESObject[]) => {
+        this.ctx.logger.info(this.tag, "ETS------------> command: " + command+',args'+args)
+        if (command === 'focus') {
+          this.showTextInput = true;
+          setTimeout(()=>{
+            this.getUIContext().getFocusController().requestFocus("search");
+            // this.getUIContext().getFocusController().requestFocus("search");
+          }, 100)
+        } else if (command === 'blur') {
+          this.getUIContext().getFocusController().clearFocus();
+        } else if (command === 'unFocus') {
+          this.getUIContext().getFocusController().clearFocus();
+        } else if (command === 'clearText') {
+          this.text = "";
+        } else if (command === 'toggleCancelButton') {
+            // if (JSON.stringify(args) == 'true') {
+            if (args.toString() == 'true') {
+              this.cancelIconVisiblilty = Visibility.Visible;
+            } else {
+              this.cancelIconVisiblilty = Visibility.None;
+            }
+        } else if (command === 'cancelSearch') {
+          this.cancelSearch();
+        }
+
+      });
+
+    let left = this.isFirstScreenInStack ? NATIVE_BUTTON_OFFSET - NATIVE_BUTTON_VERTICAL_EDGE_MARGIN :
+      -NATIVE_BUTTON_VERTICAL_EDGE_MARGIN
+    console.info('test zyx searchbar appear isFirstScreenInStack:'+this.isFirstScreenInStack+',tV:'+(NATIVE_BUTTON_OFFSET - NATIVE_BUTTON_VERTICAL_EDGE_MARGIN)+',fv:'+(-NATIVE_BUTTON_VERTICAL_EDGE_MARGIN))
   }
 
   updateState() {
@@ -48,24 +87,30 @@ export struct RNSSearchBar {
     if (this.type !== this.getInputType(this.descriptor.rawProps["inputType"])) {
       this.type = this.getInputType(this.descriptor.rawProps["inputType"])
     }
+    if (this.hintTextColor !== this.descriptor.rawProps["hintTextColor"] || '#333333') {
+      this.hintTextColor = this.descriptor.rawProps["hintTextColor"] || '#333333';
+    }
+    this.cancelButtonText = this.descriptor.rawProps["cancelButtonText"] || 'cancel';
+    this.headerIconColor = this.descriptor.rawProps["headerIconColor"];
+    let shouldShowHintSearchIcon: boolean = this.descriptor.rawProps["shouldShowHintSearchIcon"]
   }
 
   aboutToDisappear() {
     this.cleanUpCallbacks.forEach(cb => cb())
   }
 
-  getInputType(value: string): InputType {
+  getInputType(value: string): SearchType {
     switch (value) {
       case 'text':
-        return InputType.Normal
+        return SearchType.NORMAL
       case 'phone':
-        return InputType.PhoneNumber
+        return SearchType.PHONE_NUMBER
       case 'number':
-        return InputType.Number
+        return SearchType.NUMBER
       case 'email':
-        return InputType.Email
+        return SearchType.EMAIL
       default:
-        return InputType.Normal
+        return SearchType.NORMAL
     }
   }
 
@@ -79,12 +124,17 @@ export struct RNSSearchBar {
     Column() {
       Row() {
         if (this.showTextInput) {
-          TextInput({
-            text: this.text,
-            controller: this.controller,
-            placeholder: this.placeholder,
-          })
-            .onChange((value: string) => {
+          Row() {
+            Search({ placeholder: this.placeholder, value: this.text })
+              .layoutWeight(1)
+              .fontColor(this.fontColor)
+              .placeholderColor(this.hintTextColor)
+              .searchIcon({ color: this.headerIconColor })
+              .backgroundColor(this.backgroundColorValue)
+              .cancelButton({ style: CancelButtonStyle.CONSTANT})
+              .type(this.type)
+              .focusable(true)
+              .onChange((value: string) => {
               this.text = value
               this.eventEmitter!.emit("changeText", { text: value })
             })
@@ -97,15 +147,21 @@ export struct RNSSearchBar {
             .onSubmit(() => {
               this.eventEmitter?.emit("searchButtonPress", {
                 text: this.text
+                })
               })
-            })
-            .width(200)
-            .backgroundColor(this.backgroundColorValue)
-            .fontColor(this.fontColor)
-            .type(this.type)
-          SymbolGlyph($r('sys.symbol.xmark')).fontSize(26).onClick(() => {
-            this.cancelSearch()
-          })
+            .id("search")
+            Text(this.cancelButtonText)
+              .padding({ left: 5 })
+              // .fontColor(this.getCancelButtonColor())
+              .visibility(this.cancelIconVisiblilty)
+              .onClick((e) => {
+                if (this.text !== "") {
+                  this.text = "";
+                  this.eventEmitter!.emit("changeText", { text: this.text })
+                }
+                this.cancelSearch()
+              })
+          }.width(200)
         } else {
           SymbolGlyph($r('sys.symbol.magnifyingglass')).fontSize(26).onClick(() => {
             this.showTextInput = true;

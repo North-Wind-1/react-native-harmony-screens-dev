@@ -21,7 +21,8 @@ type StackParamList = {
   Search: undefined;
 };
 
-type BarTintColor = 'lightcoral' | 'orange' | 'white' | 'darkslategray';
+// type BarTintColor = 'lightcoral' | 'orange' | 'white' | 'darkslategray';
+type BarTintColor = '#FF7F50' | '#FFA500' | '#FFFFFF' | '#2F4F4F';
 
 type AutoCapitalize = Exclude<SearchBarProps['autoCapitalize'], undefined>;
 type InputType = Exclude<SearchBarProps['inputType'], undefined>;
@@ -35,10 +36,10 @@ const MainScreen = ({navigation}: MainScreenProps): React.JSX.Element => {
 
   const [search, setSearch] = useState('');
   const [placeholder, setPlaceholder] = useState('Search for something...');
-  const [barTintColor, setBarTintColor] = useState<BarTintColor>('white');
-  const [hintTextColor, setHintTextColor] = useState<BarTintColor>('orange');
+  const [barTintColor, setBarTintColor] = useState<BarTintColor>('#FFFFFF'); // 'white'
+  const [hintTextColor, setHintTextColor] = useState<BarTintColor>('#FFA500'); // 'orange'
   const [headerIconColor, setHeaderIconColor] =
-    useState<BarTintColor>('orange');
+    useState<BarTintColor>('#FFA500'); // 'orange'
   const [shouldShowHintSearchIcon, setShouldShowHintSearchIcon] =
     useState(true);
   const [hideWhenScrolling, setHideWhenScrolling] = useState(false);
@@ -64,36 +65,36 @@ const MainScreen = ({navigation}: MainScreenProps): React.JSX.Element => {
         placeholder,
         inputType,
         onChangeText: event => setSearch(event.nativeEvent.text),
-        onCancelButtonPress: () =>
-          toast.push({
-            message: '[iOS] Cancel button pressed',
-            backgroundColor: 'orange',
-          }),
-        onClose: () =>
-          toast.push({
-            message: '[Android] Closing',
-            backgroundColor: 'orange',
-          }),
-        onOpen: () =>
-          toast.push({
-            message: '[Android] Opening',
-            backgroundColor: 'tomato',
-          }),
-        onSearchButtonPress: () =>
-          toast.push({
-            message: search,
-            backgroundColor: 'forestgreen',
-          }),
-        onFocus: () =>
-          toast.push({
-            message: 'Search bar pressed',
-            backgroundColor: 'dodgerblue',
-          }),
-        onBlur: () =>
-          toast.push({
-            message: 'Lost focus on search bar',
-            backgroundColor: 'purple',
-          }),
+        onCancelButtonPress: () => {},
+          // toast.push({
+          //   message: '[iOS] Cancel button pressed',
+          //   backgroundColor: 'orange',
+          // }),
+        onClose: () => {},
+          // toast.push({
+          //   message: '[Android] Closing',
+          //   backgroundColor: 'orange',
+          // }),
+        onOpen: () => {},
+          // toast.push({
+          //   message: '[Android] Opening',
+          //   backgroundColor: 'tomato',
+          // }),
+        onSearchButtonPress: () => {},
+          // toast.push({
+          //   message: search,
+          //   backgroundColor: 'forestgreen',
+          // }),
+        onFocus: () => {},
+          // toast.push({
+          //   message: 'Search bar pressed',
+          //   backgroundColor: 'dodgerblue',
+          // }),
+        onBlur: () => {},
+          // toast.push({
+          //   message: 'Lost focus on search bar',
+          //   backgroundColor: 'purple',
+          // }),
       },
     });
   }, [
@@ -125,8 +126,9 @@ const MainScreen = ({navigation}: MainScreenProps): React.JSX.Element => {
         label="Bar Tint Color"
         value={barTintColor}
         onValueChange={setBarTintColor}
-        items={['lightcoral', 'orange', 'darkslategray', 'white']}
+        items={['#FF7F50', '#FFA500', '#2F4F4F', '#FFFFFF']}
       />
+      {/* items={['lightcoral', 'orange', 'darkslategray', 'white']} */}
       <SettingsPicker<AutoCapitalize>
         label="Auto capitalize"
         value={autoCapitalize}
@@ -160,14 +162,16 @@ const MainScreen = ({navigation}: MainScreenProps): React.JSX.Element => {
         label="Text hint color"
         value={hintTextColor}
         onValueChange={setHintTextColor}
-        items={['lightcoral', 'orange', 'darkslategray', 'white']}
+        items={['#FF7F50', '#FFA500', '#2F4F4F', '#FFFFFF']}
       />
+      {/* items={['lightcoral', 'orange', 'darkslategray', 'white']} */}
       <SettingsPicker<BarTintColor>
         label="Header icon color"
         value={headerIconColor}
         onValueChange={setHeaderIconColor}
-        items={['lightcoral', 'orange', 'darkslategray', 'white']}
+        items={['#FF7F50', '#FFA500', '#2F4F4F', '#FFFFFF']}
       />
+      {/* items={['lightcoral', 'orange', 'darkslategray', 'white']} */}
       <SettingsSwitch
         label="Show search hint icon"
         value={shouldShowHintSearchIcon}
