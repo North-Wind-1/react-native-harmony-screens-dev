@@ -22,6 +22,7 @@ export struct RNSScreenStack {
   @State public topInset: number = 0;
   @State private isFirstNavigator: boolean | undefined = undefined;
   @Watch("onDescriptorChange") @State descriptor: RNSScreenStackDescriptor = {} as RNSScreenStackDescriptor
+  static ROOT_TAG: number = 0;
 
   updateStack(newChildren: number[]) {
     if (!newChildren || this.stack.length === 0) {
@@ -63,6 +64,9 @@ export struct RNSScreenStack {
   }
 
   async aboutToAppear() {
+    if (RNSScreenStack.ROOT_TAG == 0) {
+      RNSScreenStack.ROOT_TAG = this.tag;
+    }
     this.eventEmitter = new RNC.RNSScreenStack.EventEmitter(this.ctx.rnInstance, this.tag)
     this.descriptor = this.ctx.descriptorRegistry.getDescriptor<RNSScreenStackDescriptor>(this.tag)
     this.cleanUpCallbacks.push(this.ctx.descriptorRegistry.subscribeToDescriptorChanges(this.tag,
@@ -120,9 +124,9 @@ export struct RNSScreenStack {
       return undefined;
     }
 
-    if (this.shouldFallbackToDefaultAnimation(operation, from, to)) {
-      return undefined;
-    }
+//    if (this.shouldFallbackToDefaultAnimation(operation, from, to)) {
+//      return undefined;
+//    }
 
     this.customTransitionCoordinator.operation = operation;
     return {

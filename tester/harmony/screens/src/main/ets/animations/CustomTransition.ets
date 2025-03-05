@@ -69,6 +69,20 @@ export class CustomTransitionCoordinator {
     this.proxy?.finishTransition();
   }
 
+  updateProgress(progress: number) {
+    if (!this.proxy?.updateTransition) {
+      return;
+    }
+    progress = this.operation == NavigationOperation.PUSH ? 1 - progress : progress;
+    this.proxy?.updateTransition(progress);
+  }
+
+  cancelTransition() {
+    if (this.proxy?.cancelTransition) {
+      this.proxy.cancelTransition();
+    }
+  }
+
   getAnimateParam(name: string): AnimateCallback {
     return this.customTransitionMap.get(name)!;
   }

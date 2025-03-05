@@ -2,7 +2,7 @@ import { AnimationConfiguration } from "./AnimationHandler";
 
 const fadeFromBottom: AnimationConfiguration = {
   animationConfiguration: {
-    duration: 400
+    duration: 100
   },
   attachAnimationStartState: {
     translateYValue: '100%',
@@ -17,7 +17,7 @@ const fadeFromBottom: AnimationConfiguration = {
     opacityValue: 1
   },
   detachAnimationEndState: {
-    translateYValue: '100%',
+    translateYValue: '-100%',
     opacityValue: 0
   },
   showAnimationStartState: {

@@ -11,8 +11,8 @@ import { window } from '@kit.ArkUI';
 import { AnimationHandlerEvent, getNewAnimationState } from '../animations/AnimationHandler';
 import { RNSScreenTitleHeader } from "./RNSScreenTitleHeader"
 import { TITLEBAR_HEIGHT } from '../Constants';
-import i18n from '@ohos.i18n';
 import common from '@ohos.app.ability.common';
+import i18n from '@ohos.i18n';
 
 export type RNSScreenDescriptor = Descriptor<"RNSScreen", RNC.RNSScreen.Props>
 
@@ -49,8 +49,10 @@ export struct RNSScreen {
   private dismissCount: number = 1;
   private pageId: string = 'default';
   private screenStackHeaderConfigTag!: number | undefined
-  private stackPresentationMode: string = '';
+  @State stackPresentationMode: string = '';
   private cleanupCommandCallback?: () => void = undefined;
+  static ROOT_TAG: number = 0;
+
   @State public topInset: number = 0;
   private gestureEnabled: boolean = false;
   private fullScreenSwipeEnabled: boolean = false;
@@ -65,6 +67,8 @@ export struct RNSScreen {
   private translation: number = 0;
   private velocity: number = 0;
   private distance: number = 0;
+  static TOP_PAGEID: string = 'default'
+  private preventNativeDismiss: boolean = false;
 
   @State descriptor: RNSScreenDescriptor = {} as RNSScreenDescriptor
   @State screenStackHeaderConfigDescriptor: RNSScreenStackHeaderConfigDescriptor | undefined = undefined
@@ -85,8 +89,7 @@ export struct RNSScreen {
   @State positionX: number = 0;
   @State positionY: number = 0;
   private panOption: PanGestureOptions = new PanGestureOptions({ direction: PanDirection.Left | PanDirection.Right });
-  // @Link stackController: NavPathStack
-  @State stackController: NavPathStack =  new NavPathStack();
+  private stackController: NavPathStack | null = null;
 
   private statusBarConfiguration: StatusBarConfiguration = {
     statusBarStyle: "",
@@ -108,6 +111,9 @@ export struct RNSScreen {
     top: undefined
   }
   async aboutToAppear() {
+    if (RNSScreen.ROOT_TAG === 0) {
+      RNSScreen.ROOT_TAG = this.tag;
+    }
     this.eventEmitter = new RNC.RNSScreen.EventEmitter(this.ctx.rnInstance, this.tag)
     this.descriptor = this.ctx.descriptorRegistry.getDescriptor<RNSScreenDescriptor>(this.tag)
     this.cleanUpCallbacks.push(this.ctx.descriptorRegistry.subscribeToDescriptorChanges(this.tag,
@@ -135,6 +141,7 @@ export struct RNSScreen {
     }
 
     this.updateState()
+    this.setScreenOrientation();
   }
 
   aboutToDisappear() {
@@ -142,8 +149,9 @@ export struct RNSScreen {
   }
 
   async updateState(forceUpdate: boolean = false) {
-    this.updateNativeHeaderHeight()
+    // this.updateNativeHeaderHeight() // todo edit
 
+    this.preventNativeDismiss = this.descriptor.rawProps["preventNativeDismiss"];
     this.gestureEnabled = this.descriptor.rawProps["gestureEnabled"];
     this.fullScreenSwipeEnabled = this.descriptor.rawProps["fullScreenSwipeEnabled"];
     this.customAnimationOnSwipe = this.descriptor.rawProps["customAnimationOnSwipe"];
@@ -242,6 +250,7 @@ export struct RNSScreen {
         navigationBarColor: this.navigationBarConfiguration.navigationBarColor
       });
     }
+    this.updateNativeHeaderHeight();
   }
 
   updateHeaderConfigState() {
@@ -314,9 +323,8 @@ export struct RNSScreen {
       return;
     }
     let orientation: string = this.descriptor.rawProps["screenOrientation"];
-    let orientationTmp = -1;//window.Orientation.UNSPECIFIED;
-    if (orientation/* && this.screenOrientation !== orientation*/)
-    {
+    let orientationTmp = -1; // window.Orientation.UNSPECIFIED;
+    if (this.pageId !== "default" && this.pageId === RNSScreen.TOP_PAGEID) {
       this.screenOrientation = orientation;
 
       if (this.screenOrientation == "all") {
@@ -342,6 +350,85 @@ export struct RNSScreen {
         lastWindow.setPreferredOrientation(orientationTmp);
       });
     }
+  }
+
+  private isInGestureResponseDistance(event: GestureEvent): boolean {
+    let x = event.fingerList[0].globalX;
+    let y = event.fingerList[0].globalY;
+    let isRTL = false; // i18n.Unicode.isRTL("a");
+    if (isRTL) {
+      let vWidth: number = event.target.area.width as number;
+      x = vWidth - x;
+    }
+    return !((this.start != -1 && x < this.start) || (this.end != -1 && x > this.end) || (this.top != -1 && y < this.top) || (this.bottom != -1 && y > this.bottom));
+  }
+
+  private isCustomAnimation(): boolean {
+    return (this.stackAnimation != "flip" && this.stackAnimation != "default");
+  }
+
+  private gestureRecognizerShouldBegin(event: GestureEvent): boolean {
+    if (!this.gestureEnabled || !this.fullScreenSwipeEnabled) {
+      return false;
+    }
+
+    let inDistance: boolean = this.isInGestureResponseDistance(event);
+    if (!inDistance) {
+      return false;
+    }
+
+    let flag = false;
+    // if (this.customAnimationOnSwipe && this.isCustomAnimation()) {
+    // if (this.isCustomAnimation())
+    {
+      // i18n.isRTL("zh-CN");// 中文不是RTL语言，返回false
+      // let isrtl: boolean = i18n.Unicode.isRTL("a");
+      let isRTL = false; 
+      let isSlideFromLeft: boolean = this.stackAnimation === "slide_from_left";
+      let isCorrectEdge: boolean = (isRTL && event.offsetX < 0 ) || (!isRTL && isSlideFromLeft && event.offsetX < 0) || (isRTL && isSlideFromLeft && event.offsetX > 0) || (!isRTL && event.offsetX > 0)
+      if (isCorrectEdge) {
+        flag = true
+        return flag;
+      }
+    }
+
+    return flag;
+  }
+
+  private handleSwipe(event: GestureEvent): void {
+
+    if (this.swipeDirection && this.swipeDirection === "vertical") {
+      this.translation = event.offsetY;
+      this.velocity = event.offsetY;
+      this.distance= event.target.area.height as number;
+
+      this.offsetY = this.positionY + event.offsetY;
+//      this.translateYValue = this.offsetY.toString(); 
+    } else {
+      this.translation = event.offsetX;
+      this.velocity = event.offsetX;
+      this.distance= event.target.area.width as number;
+      // i18n.isRTL("zh-CN");// 中文不是RTL语言，返回false
+      // let isrtl: boolean = i18n.Unicode.isRTL("a");  // isrtl = false
+      let isRTL = false; // i18n.Unicode.isRTL("a"); // todo edit sss
+      if (isRTL) {
+        this.translation = -this.translation;
+        this.velocity = -this.velocity;
+        this.offsetX = this.positionX + event.offsetX;
+      } else  {
+        this.offsetX = this.positionX + event.offsetX;
+      }
+
+//      this.translateXValue = this.offsetX.toString();
+    }
+
+    // todo animation
+    let isInverted: boolean = this.stackAnimation === "slide_from_left";
+    let transitionProgress: number = (this.translation / this.distance);
+    transitionProgress = isInverted ? transitionProgress * -1 : transitionProgress;
+    this.eventEmitter!.emit("transitionProgress", {progress: transitionProgress, closing: true ? 1 : 0, goingForward: false ? 1 : 0})
+    this.customTransitionCoordinator.updateProgress(transitionProgress);
+
   }
 
   @Builder
@@ -379,6 +466,7 @@ export struct RNSScreen {
       if (context.navDestinationId) {
         this.pageId = context.navDestinationId;
         this.registerAnimation();
+        this.stackController = context.pathStack;
       }
     })
     .hideTitleBar(this.shouldHideTitleBar)
@@ -389,6 +477,7 @@ export struct RNSScreen {
       this.eventEmitter!.emit("appear", {})
     })
     .onShown(() => {
+      RNSScreen.TOP_PAGEID =  this.pageId;
       this.updateState(true)
       this.updateHeaderConfigState()
       this.setScreenOrientation()
@@ -401,13 +490,66 @@ export struct RNSScreen {
       this.eventEmitter!.emit("disappear", {})
     })
     .onBackPressed(() => {
-      this.eventEmitter!.emit("dismissed", {
-        dismissCount: this.dismissCount
-      })
+      if (this.preventNativeDismiss) {
+        this.eventEmitter!.emit("nativeDismissCancelled", {
+          dismissCount: this.dismissCount
+        })
+      } else {
+        this.eventEmitter!.emit("dismissed", {
+          dismissCount: this.dismissCount
+        })
+      }
       return false;
     })
     .backgroundColor(this.backgroundColorValue)
     .translate({ x: this.translateXValue, y: this.translateYValue })
     .opacity(this.opacityValue)
+    .gesture(
+      PanGesture(this.panOption)
+        .onActionStart((event: GestureEvent) => {
+          this.couldSwipe = this.gestureRecognizerShouldBegin(event)
+          if (this.couldSwipe) {
+            this.isInverted = this.stackAnimation === "slide_from_left"; // todo edit
+          }
+        })
+        .onActionUpdate((event: GestureEvent) => {
+          if (this.couldSwipe) {
+            this.handleSwipe(event);
+          }
+        })
+        .onActionCancel(() => {
+          this.couldSwipe = false;
+          this.eventEmitter!.emit("gestureCancel", {})
+          this.customTransitionCoordinator.cancelTransition();
+        })
+        .onActionEnd((event: GestureEvent) => {
+          if (this.couldSwipe) {
+            this.positionX = this.offsetX
+            this.positionY = this.offsetY
+
+            let snapPoint: number = this.distance / 2;
+            let gestureDistance: number = this.translation + this.velocity * 0.3;
+            gestureDistance = this.isInverted ? gestureDistance * -1 : gestureDistance;
+            let shouldFinishTransition: boolean = gestureDistance > snapPoint;
+            if (shouldFinishTransition) {
+              this.eventEmitter!.emit("dismissed", {
+                dismissCount: this.dismissCount
+              })
+              this.customTransitionCoordinator.finishTransition();
+            } else {
+              this.translateXValue = '0';
+              this.translateYValue = '0';
+              this.customTransitionCoordinator.cancelTransition();
+              this.eventEmitter!.emit("gestureCancel", {})
+            }
+          }
+          this.offsetY = 0;
+          this.offsetX = 0;
+          this.positionX = 0;
+          this.positionY = 0;
+
+          this.couldSwipe = false;
+        })
+    )
   }
 }
