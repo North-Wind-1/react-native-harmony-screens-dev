@@ -1,7 +1,7 @@
 import { RNComponentContext, } from '@rnoh/react-native-openharmony';
 import { RNSScreenStackHeaderConfigDescriptor } from './RNSScreenStackHeaderConfig';
 import { RNSScreenStackHeaderSubview, RNSScreenStackHeaderSubviewDescriptor } from './RNSScreenStackHeaderSubview';
-import { TITLEBAR_HEIGHT, NATIVE_BUTTON_VERTICAL_EDGE_MARGIN } from '../Constants';
+import { TITLEBAR_HEIGHT, NATIVE_BUTTON_VERTICAL_EDGE_MARGIN, NATIVE_BUTTON_OFFSET } from '../Constants';
 
 @Component
 export struct RNSScreenTitleHeader {
@@ -14,6 +14,7 @@ export struct RNSScreenTitleHeader {
   @State titleFontSizeValue: string | undefined = undefined;
   @State titleFontWeightValue: string | undefined = undefined;
   @State titleColorValue: string | undefined = undefined;
+  @State hideShadow: boolean = false;
   private cleanUpCallbacks: (() => void)[] = []
 
   aboutToAppear(): void {
@@ -35,6 +36,7 @@ export struct RNSScreenTitleHeader {
     if (!this.descriptor) {
       return
     }
+    this.hideShadow = this.descriptor.rawProps["hideShadow"];
     const shouldDisplayNativeTitle = this.descriptor.childrenTags.length > 0 ?
     this.descriptor.childrenTags.every((e) => {
       const tmpDesc = this.ctx.descriptorRegistry.getDescriptor<RNSScreenStackHeaderSubviewDescriptor>(e)
@@ -64,33 +66,46 @@ export struct RNSScreenTitleHeader {
   }
 
   build() {
-    Stack() {
-      Text(this.nativeTitleText)
-        .width("100%")
-        .height("100%")
-        .offset({
-          left: TITLEBAR_HEIGHT + NATIVE_BUTTON_VERTICAL_EDGE_MARGIN
-        })
-        .fontFamily(this.fontFamilyValue)
-        .fontSize(this.titleFontSizeValue)
-        .fontWeight(this.titleFontWeightValue)
-        .fontColor(this.titleColorValue)
-        .textAlign(TextAlign.Start)
-      if (this.descriptor) {
-        ForEach(this.descriptor.childrenTags, (childTag: number) => {
-          RNSScreenStackHeaderSubview({
-            ctx: this.ctx,
-            tag: childTag,
-            isFirstScreenInStack: this.isFirstScreenInStack
+    Column() {
+      Stack() {
+        Text(this.nativeTitleText)
+          .width("100%")
+          .height("100%")
+          .offset({
+            left: TITLEBAR_HEIGHT + NATIVE_BUTTON_VERTICAL_EDGE_MARGIN
           })
-        })
+          .fontFamily(this.fontFamilyValue)
+          .fontSize(this.titleFontSizeValue)
+          .fontWeight(this.titleFontWeightValue)
+          .fontColor(this.titleColorValue)
+          .textAlign(TextAlign.Start)
+        if (this.descriptor) {
+          ForEach(this.descriptor.childrenTags, (childTag: number) => {
+            RNSScreenStackHeaderSubview({
+              ctx: this.ctx,
+              tag: childTag,
+              isFirstScreenInStack: this.isFirstScreenInStack
+            })
+          })
+        }
       }
-    }
-    .width("100%")
+      .width("100%")
+      .height("100%")
+      .hitTestBehavior(HitTestMode.Transparent)
+      .offset({
+        right: TITLEBAR_HEIGHT
+      })
+
+      Text('')
+        .width("100%")
+        .height("1")
+        .backgroundColor('#999999')
+        .visibility(this.hideShadow ? Visibility.None : Visibility.Visible)
+        .offset({
+          top: -1,
+          left: this.isFirstScreenInStack ? 0 : -TITLEBAR_HEIGHT
+        })
+    }.width("100%")
     .height("100%")
-    .hitTestBehavior(HitTestMode.Transparent)
-    .offset({
-      right: TITLEBAR_HEIGHT
-    })
   }
 }
