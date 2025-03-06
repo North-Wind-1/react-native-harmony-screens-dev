@@ -69,6 +69,7 @@ export struct RNSScreen {
   private distance: number = 0;
   static TOP_PAGEID: string = 'default'
   private preventNativeDismiss: boolean = false;
+  private directions: string= ''
 
   @State descriptor: RNSScreenDescriptor = {} as RNSScreenDescriptor
   @State screenStackHeaderConfigDescriptor: RNSScreenStackHeaderConfigDescriptor | undefined = undefined
@@ -274,6 +275,7 @@ export struct RNSScreen {
       return
     }
 
+    this.directions = this.screenStackHeaderConfigDescriptor.rawProps["direction"]
     let newTitleHeight: number = this.titleHeight;
     if (this.screenStackHeaderConfigDescriptor.rawProps["hidden"] ||
       this.presentationMode === NavDestinationMode.DIALOG) {
@@ -351,11 +353,23 @@ export struct RNSScreen {
       });
     }
   }
-
+  
+  private isRtl() {
+    let flag: boolean = false;
+    if (this.directions) {
+      if (this.directions === 'rtl') {
+        flag = true;
+      } else if (this.directions === 'ltr') {
+        flag = false;
+      }
+    }
+    return flag;
+  }
+  
   private isInGestureResponseDistance(event: GestureEvent): boolean {
     let x = event.fingerList[0].globalX;
     let y = event.fingerList[0].globalY;
-    let isRTL = false; // i18n.Unicode.isRTL("a");
+    let isRTL = this.isRtl();
     if (isRTL) {
       let vWidth: number = event.target.area.width as number;
       x = vWidth - x;
@@ -381,9 +395,7 @@ export struct RNSScreen {
     // if (this.customAnimationOnSwipe && this.isCustomAnimation()) {
     // if (this.isCustomAnimation())
     {
-      // i18n.isRTL("zh-CN");// 中文不是RTL语言，返回false
-      // let isrtl: boolean = i18n.Unicode.isRTL("a");
-      let isRTL = false; 
+      let isRTL = this.isRtl();
       let isSlideFromLeft: boolean = this.stackAnimation === "slide_from_left";
       let isCorrectEdge: boolean = (isRTL && event.offsetX < 0 ) || (!isRTL && isSlideFromLeft && event.offsetX < 0) || (isRTL && isSlideFromLeft && event.offsetX > 0) || (!isRTL && event.offsetX > 0)
       if (isCorrectEdge) {
@@ -408,9 +420,7 @@ export struct RNSScreen {
       this.translation = event.offsetX;
       this.velocity = event.offsetX;
       this.distance= event.target.area.width as number;
-      // i18n.isRTL("zh-CN");// 中文不是RTL语言，返回false
-      // let isrtl: boolean = i18n.Unicode.isRTL("a");  // isrtl = false
-      let isRTL = false; // i18n.Unicode.isRTL("a"); // todo edit sss
+      let isRTL = this.isRtl();
       if (isRTL) {
         this.translation = -this.translation;
         this.velocity = -this.velocity;
@@ -448,6 +458,21 @@ export struct RNSScreen {
     return descriptor.type === componentType;
   }
 
+  private backPressed(){
+    let pathArray = this.stackController?.getAllPathName();
+    if (pathArray?.length && pathArray?.length > 1) {
+      if (this.preventNativeDismiss) {
+        this.eventEmitter!.emit("nativeDismissCancelled", {
+          dismissCount: this.dismissCount
+        })
+      } else {
+        this.eventEmitter!.emit("dismissed", {
+          dismissCount: this.dismissCount
+        })
+      }
+    }
+  }
+  
   build() {
     NavDestination() {
       RNViewBase({ ctx: this.ctx, tag: this.tag }) {
@@ -490,15 +515,7 @@ export struct RNSScreen {
       this.eventEmitter!.emit("disappear", {})
     })
     .onBackPressed(() => {
-      if (this.preventNativeDismiss) {
-        this.eventEmitter!.emit("nativeDismissCancelled", {
-          dismissCount: this.dismissCount
-        })
-      } else {
-        this.eventEmitter!.emit("dismissed", {
-          dismissCount: this.dismissCount
-        })
-      }
+      this.backPressed();
       return false;
     })
     .backgroundColor(this.backgroundColorValue)
