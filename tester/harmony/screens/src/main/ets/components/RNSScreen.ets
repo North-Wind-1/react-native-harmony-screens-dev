@@ -70,6 +70,7 @@ export struct RNSScreen {
   static TOP_PAGEID: string = 'default'
   private preventNativeDismiss: boolean = false;
   private directions: string= ''
+  @State titleBarTranslucent: boolean = false;
 
   @State descriptor: RNSScreenDescriptor = {} as RNSScreenDescriptor
   @State screenStackHeaderConfigDescriptor: RNSScreenStackHeaderConfigDescriptor | undefined = undefined
@@ -275,7 +276,8 @@ export struct RNSScreen {
       return
     }
 
-    this.directions = this.screenStackHeaderConfigDescriptor.rawProps["direction"]
+    this.directions = this.screenStackHeaderConfigDescriptor.rawProps["direction"];
+    this.titleBarTranslucent = this.screenStackHeaderConfigDescriptor.rawProps["translucent"];
     let newTitleHeight: number = this.titleHeight;
     if (this.screenStackHeaderConfigDescriptor.rawProps["hidden"] ||
       this.presentationMode === NavDestinationMode.DIALOG) {
@@ -484,7 +486,7 @@ export struct RNSScreen {
       }
     }
     .title({ builder: this.screenTitleBuilder, height: this.titleHeight }, {
-      backgroundColor: this.titleBarBackgroundColor,
+      backgroundColor: this.titleBarTranslucent?Color.Transparent:this.titleBarBackgroundColor,
     })
     .mode(this.presentationMode)
     .onReady((context: NavDestinationContext) => {

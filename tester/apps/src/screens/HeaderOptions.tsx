@@ -227,9 +227,10 @@ const App = (): React.JSX.Element => (
         name="Settings"
         component={SettingsScreen}
         options={{
-          headerTintColor: 'hotpink',
+          headerTintColor: '#FF69B4',
         }}
       />
+      // headerTintColor: 'hotpink',
     </Stack.Navigator>
   </ToastProvider>
 );

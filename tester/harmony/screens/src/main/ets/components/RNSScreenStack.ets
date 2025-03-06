@@ -189,7 +189,7 @@ export struct RNSScreenStack {
         Navigation(this.stackController)
           .mode(NavigationMode.Stack)
           .navDestination(this.navDestinationBuilder)
-          .titleMode(NavigationTitleMode.Free)
+          .titleMode(NavigationTitleMode.Mini)
           .hitTestBehavior(HitTestMode.Transparent)
           .hideNavBar(true)
           .customNavContentTransition((from: NavContentInfo, to: NavContentInfo,

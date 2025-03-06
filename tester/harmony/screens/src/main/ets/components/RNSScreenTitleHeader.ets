@@ -75,8 +75,8 @@ export struct RNSScreenTitleHeader {
             left: TITLEBAR_HEIGHT + NATIVE_BUTTON_VERTICAL_EDGE_MARGIN
           })
           .fontFamily(this.fontFamilyValue)
-          .fontSize(this.titleFontSizeValue)
-          .fontWeight(this.titleFontWeightValue)
+          .fontSize(this.titleFontSizeValue?this.titleFontSizeValue:18)
+          .fontWeight(this.titleFontWeightValue?this.titleFontWeightValue:FontWeight.Medium)
           .fontColor(this.titleColorValue)
           .textAlign(TextAlign.Start)
         if (this.descriptor) {

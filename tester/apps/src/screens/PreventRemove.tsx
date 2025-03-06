@@ -65,7 +65,7 @@ const PreventRemoveScreen = ({
         <TextInput
           autoFocus
           value={text}
-          placeholder="Type something to prevent removeâ€?"
+          placeholder="Type something to prevent removeâ€¦"
           placeholderTextColor="#999"
           onChangeText={setText}
         />
