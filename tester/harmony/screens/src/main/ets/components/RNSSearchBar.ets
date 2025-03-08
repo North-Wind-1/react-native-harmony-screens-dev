@@ -13,14 +13,12 @@ export struct RNSSearchBar {
   public tag: number = 0
   @State descriptor: RNSSearchBarDescriptor = {} as RNSSearchBarDescriptor
   private cleanUpCallbacks: (() => void)[] = []
-  private controller: TextInputController = new TextInputController()
   private eventEmitter: RNC.RNSSearchBar.EventEmitter | undefined = undefined
   @State text: string = ''
   @State showTextInput: boolean = false;
   @State placeholder: string | undefined = undefined;
   @State backgroundColorValue: string | undefined = undefined;
   @State fontColor: string | undefined = undefined
-  // @State type: InputType | undefined = undefined
   @State type: SearchType | undefined = undefined
   @State hintTextColor: string | undefined = undefined
   @State cancelIconVisiblilty: Visibility = Visibility.Visible
@@ -38,26 +36,31 @@ export struct RNSSearchBar {
       }
     ))
     this.updateState()
-    // TODO: event handlers, like cleanText
-
     this.cleanupCommandCallback = this.ctx.componentCommandReceiver.registerCommandCallback(
       this.tag,
       (command, args:ESObject[]) => {
         this.ctx.logger.info(this.tag, "ETS------------> command: " + command+',args'+args)
-        if (command === 'focus') {
+        if (command === 'open') {
+          if (!this.showTextInput) {
+            this.showTextInput = true;
+          }
+        } else if (command === 'close') {
+          if (this.showTextInput) {
+            this.getUIContext().getFocusController().clearFocus();
+            this.showTextInput = false;
+          }
+        } else if (command === 'focus') {
           this.showTextInput = true;
           setTimeout(()=>{
             this.getUIContext().getFocusController().requestFocus("search");
-            // this.getUIContext().getFocusController().requestFocus("search");
-          }, 100)
+          }, 50)
         } else if (command === 'blur') {
           this.getUIContext().getFocusController().clearFocus();
-        } else if (command === 'unFocus') {
-          this.getUIContext().getFocusController().clearFocus();
+        } else if (command === 'setText') {
+          this.text = args.toString();
         } else if (command === 'clearText') {
           this.text = "";
         } else if (command === 'toggleCancelButton') {
-            // if (JSON.stringify(args) == 'true') {
             if (args.toString() == 'true') {
               this.cancelIconVisiblilty = Visibility.Visible;
             } else {
@@ -66,15 +69,13 @@ export struct RNSSearchBar {
         } else if (command === 'cancelSearch') {
           this.cancelSearch();
         }
-
       });
-
-    let left = this.isFirstScreenInStack ? NATIVE_BUTTON_OFFSET - NATIVE_BUTTON_VERTICAL_EDGE_MARGIN :
-      -NATIVE_BUTTON_VERTICAL_EDGE_MARGIN
-    console.info('test zyx searchbar appear isFirstScreenInStack:'+this.isFirstScreenInStack+',tV:'+(NATIVE_BUTTON_OFFSET - NATIVE_BUTTON_VERTICAL_EDGE_MARGIN)+',fv:'+(-NATIVE_BUTTON_VERTICAL_EDGE_MARGIN))
   }
 
   updateState() {
+    if (!this.descriptor) {
+      return;
+    }
     if (this.placeholder !== this.descriptor.rawProps["placeholder"]) {
       this.placeholder = this.descriptor.rawProps["placeholder"];
     }
@@ -131,7 +132,7 @@ export struct RNSSearchBar {
               .placeholderColor(this.hintTextColor)
               .searchIcon({ color: this.headerIconColor })
               .backgroundColor(this.backgroundColorValue)
-              .cancelButton({ style: CancelButtonStyle.CONSTANT})
+	            .cancelButton({ style: CancelButtonStyle.CONSTANT, icon: { color: this.headerIconColor }})
               .type(this.type)
               .focusable(true)
               .onChange((value: string) => {

@@ -15,7 +15,8 @@ export struct RNSScreenStackHeaderSubview {
   private cleanUpCallbacks: (() => void)[] = []
   @State alignment: HorizontalAlign = HorizontalAlign.Center
   @State isSearchBar: boolean = false
-  @State searchBarTag: number = -1
+  @State searchBarTag: number| undefined = -1
+  @State subviewType: string| undefined = undefined
 
   aboutToAppear() {
     this.descriptor = this.ctx.descriptorRegistry.getDescriptor<RNSScreenStackHeaderSubviewDescriptor>(this.tag)
@@ -32,6 +33,7 @@ export struct RNSScreenStackHeaderSubview {
     if (!this.descriptor) {
       return;
     }
+    this.subviewType = this.descriptor.rawProps["type"];
     this.alignment = this.horizontalAlignFromString(this.descriptor.rawProps["type"])
     this.isSearchBar = this.descriptor.childrenTags.some((childTag) => {
       const tmpDesc = this.ctx.descriptorRegistry.getDescriptor<Descriptor>(childTag)
@@ -65,13 +67,13 @@ export struct RNSScreenStackHeaderSubview {
   }
 
   build() {
-    if (this.isSearchBar) {
+    if (this.subviewType && this.subviewType === 'searchBar') {
       RNSSearchBar({
         ctx: this.ctx,
         tag: this.searchBarTag,
         isFirstScreenInStack: this.isFirstScreenInStack
       })
-    } else {
+    } else if (this.subviewType !== 'searchBar') {
       Column() {
         Stack() {
           ContentSlot(this.ctx.getContentForTag(this.tag))
