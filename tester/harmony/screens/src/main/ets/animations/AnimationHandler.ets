@@ -51,7 +51,7 @@ function getAnimationConfigurationObject(animationType: string): AnimationConfig
       return noneAnimation;
     case 'fade':
       return fade;
-    case 'default': // todo add
+    case 'default':
       return slideFromRight;
     case 'flip':
       return slideFromRight;

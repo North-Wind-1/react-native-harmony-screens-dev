@@ -54,6 +54,7 @@ export struct RNSScreen {
   static ROOT_TAG: number = 0;
 
   @State public topInset: number = 0;
+  public screenPropsChange: (replaceAnimation: string, presentation: string) => void = (r: string, p: string)=>{};
   private gestureEnabled: boolean = false;
   private fullScreenSwipeEnabled: boolean = false;
   private customAnimationOnSwipe: boolean = false;
@@ -77,6 +78,7 @@ export struct RNSScreen {
   @State titleHeight: number = 0;
   @State presentationMode: NavDestinationMode = NavDestinationMode.STANDARD;
   @State stackAnimation: string = "default";
+  @State replaceAnimation: string = "push";
   @State shouldHideTitleBar: boolean = false;
   @State titleBarBackgroundColor: string | undefined = undefined;
   @State backgroundColorValue: string | undefined = undefined
@@ -150,6 +152,10 @@ export struct RNSScreen {
     this.cleanUpCallbacks.forEach(cb => cb())
   }
 
+  onScreenPropsChange(presentation: string) {
+    this.screenPropsChange(this.replaceAnimation, presentation)
+  }
+  
   async updateState(forceUpdate: boolean = false) {
     // this.updateNativeHeaderHeight() // todo edit
 
@@ -173,10 +179,14 @@ export struct RNSScreen {
     if (this.stackAnimation !== this.descriptor.rawProps["stackAnimation"] || "default") {
       this.stackAnimation = this.descriptor.rawProps["stackAnimation"] || "default"
     }
+    if (this.replaceAnimation !== this.descriptor.rawProps["replaceAnimation"] || "push") {
+      this.replaceAnimation = this.descriptor.rawProps["replaceAnimation"] || "push"
+    }
 
-    const presentation: string = this.descriptor.rawProps["stackPresentation"] || "";
+    const presentation: string = this.descriptor.rawProps["stackPresentation"] || "push";
+    this.onScreenPropsChange(presentation)
     if (["modal", "transparentModal", "containedModal", "containedTransparentModal",
-      "fullScreenModal"].includes(presentation)) {
+      "fullScreenModal", "formSheet"].includes(presentation)) {
       if (this.presentationMode !== NavDestinationMode.DIALOG) {
         this.presentationMode = NavDestinationMode.DIALOG
       }

@@ -22,6 +22,9 @@ export struct RNSScreenStack {
   @State public topInset: number = 0;
   @State private isFirstNavigator: boolean | undefined = undefined;
   @Watch("onDescriptorChange") @State descriptor: RNSScreenStackDescriptor = {} as RNSScreenStackDescriptor
+  @State replaceAnimation: string = "push";
+  @State presentation: string = "push";
+  static RECORD_PRESENTATION: string = "push";
   static ROOT_TAG: number = 0;
 
   updateStack(newChildren: number[]) {
@@ -88,6 +91,11 @@ export struct RNSScreenStack {
     this.stackController.pushPathByName(this.stack[0].toString(), null)
   }
 
+  private screenPropsChange(replaceAnimation: string, presentation: string) {
+    this.replaceAnimation = replaceAnimation;
+    this.presentation = presentation;
+  }
+  
   aboutToDisappear() {
     this.cleanUpCallbacks.forEach(cb => cb())
   }
@@ -100,6 +108,7 @@ export struct RNSScreenStack {
       isFirstScreenInStack: this.stack.indexOf(Number(tag)) === 0,
       customTransitionCoordinator: this.customTransitionCoordinator,
       topInset: this.topInset,
+      screenPropsChange: this.screenPropsChange.bind(this),
     })
   }
 
@@ -130,7 +139,7 @@ export struct RNSScreenStack {
 
     this.customTransitionCoordinator.operation = operation;
     return {
-      timeout: 7000, // The limit duration of the transition animation
+      timeout: 2000, // The limit duration of the transition animation
       transition: (transitionProxy: NavigationTransitionProxy) => {
         if (!from.navDestinationId || !to.navDestinationId) {
           return;
@@ -143,10 +152,44 @@ export struct RNSScreenStack {
         let enteringScreenAnimation: AnimationDefinition;
         let animationType: string
 
-        if (operation == NavigationOperation.PUSH) {
+        if (operation == NavigationOperation.PUSH && this.replaceAnimation === 'pop') {
+          exitingScreenAnimation = fromParam.detachAnimation;
+          enteringScreenAnimation = toParam.showAnimation;
+          animationType = fromParam.getAnimationType();
+        } else if (operation == NavigationOperation.POP && this.replaceAnimation === 'push') {
+          if ((RNSScreenStack.RECORD_PRESENTATION === 'transparentModal' || RNSScreenStack.RECORD_PRESENTATION === 'containedTransparentModal' || RNSScreenStack.RECORD_PRESENTATION === 'formSheet') && RNSScreenStack.RECORD_PRESENTATION !== this.presentation) {
+            RNSScreenStack.RECORD_PRESENTATION = this.presentation
+            exitingScreenAnimation = fromParam.detachAnimation;
+            enteringScreenAnimation = toParam.showAnimation;
+            animationType = fromParam.getAnimationType();
+          } else {
+            exitingScreenAnimation = fromParam.hideAnimation;
+            enteringScreenAnimation = toParam.attachAnimation;
+            animationType = toParam.getAnimationType();
+          }
+        } else if (operation == NavigationOperation.PUSH && this.replaceAnimation === 'push') {
+          RNSScreenStack.RECORD_PRESENTATION = this.presentation;
+          if (this.presentation === 'transparentModal' || this.presentation === 'containedTransparentModal' || this.presentation === 'formSheet') {
+            exitingScreenAnimation = fromParam.hideAnimation;
+            enteringScreenAnimation = toParam.attachAnimation;
+            animationType = toParam.getAnimationType();
+          } else {
+            exitingScreenAnimation = fromParam.detachAnimation;
+            enteringScreenAnimation = toParam.showAnimation;
+            animationType = fromParam.getAnimationType();
+          }
+        } else if (operation == NavigationOperation.POP && this.replaceAnimation === 'pop') {
           exitingScreenAnimation = fromParam.hideAnimation;
           enteringScreenAnimation = toParam.attachAnimation;
           animationType = toParam.getAnimationType();
+        } else if (operation == NavigationOperation.REPLACE && this.replaceAnimation === 'push'){
+          exitingScreenAnimation = fromParam.detachAnimation;
+          enteringScreenAnimation = toParam.showAnimation;
+          animationType = fromParam.getAnimationType();
+        } else if (operation == NavigationOperation.REPLACE && this.replaceAnimation === 'pop'){
+          exitingScreenAnimation = fromParam.hideAnimation;
+          enteringScreenAnimation = toParam.attachAnimation;
+          animationType = fromParam.getAnimationType();
         } else {
           exitingScreenAnimation = fromParam.detachAnimation;
           enteringScreenAnimation = toParam.showAnimation;

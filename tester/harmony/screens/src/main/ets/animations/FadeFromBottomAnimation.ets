@@ -5,7 +5,7 @@ const fadeFromBottom: AnimationConfiguration = {
     duration: 100
   },
   attachAnimationStartState: {
-    translateYValue: '100%',
+    translateYValue: '-100%',
     opacityValue: 0
   },
   attachAnimationEndState: {

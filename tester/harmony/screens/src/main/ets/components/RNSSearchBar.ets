@@ -24,6 +24,7 @@ export struct RNSSearchBar {
   @State cancelIconVisiblilty: Visibility = Visibility.Visible
   @State cancelButtonText: string | undefined = undefined;
   @State headerIconColor: string | undefined = undefined
+  @State shouldShowHintSearchIcon: boolean = true;
   private cleanupCommandCallback?: () => void = undefined;
 
   aboutToAppear() {
@@ -93,7 +94,7 @@ export struct RNSSearchBar {
     }
     this.cancelButtonText = this.descriptor.rawProps["cancelButtonText"] || 'cancel';
     this.headerIconColor = this.descriptor.rawProps["headerIconColor"];
-    let shouldShowHintSearchIcon: boolean = this.descriptor.rawProps["shouldShowHintSearchIcon"]
+    this.shouldShowHintSearchIcon = this.descriptor.rawProps["shouldShowHintSearchIcon"]
   }
 
   aboutToDisappear() {
@@ -130,7 +131,7 @@ export struct RNSSearchBar {
               .layoutWeight(1)
               .fontColor(this.fontColor)
               .placeholderColor(this.hintTextColor)
-              .searchIcon({ color: this.headerIconColor })
+              .searchIcon({ color: this.headerIconColor, size: this.shouldShowHintSearchIcon?16:0 })
               .backgroundColor(this.backgroundColorValue)
 	            .cancelButton({ style: CancelButtonStyle.CONSTANT, icon: { color: this.headerIconColor }})
               .type(this.type)
