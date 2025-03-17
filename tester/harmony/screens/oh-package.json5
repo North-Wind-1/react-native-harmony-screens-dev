@@ -2,7 +2,7 @@
   license: '',
   devDependencies: {},
   author: '',
-  name: 'screens',
+  name: '@rnoh/react-native-harmony-screens',
   description: '',
   type: 'module',
   version: '3.34.0-rc.0',
