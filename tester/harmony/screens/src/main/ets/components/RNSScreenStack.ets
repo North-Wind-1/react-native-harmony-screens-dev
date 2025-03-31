@@ -1,3 +1,27 @@
+/**
+ * MIT License
+ *
+ * Copyright (C) 2025 Huawei Device Co., Ltd.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 import { Descriptor, RNComponentContext, } from '@rnoh/react-native-openharmony';
 import { RNC } from "@rnoh/react-native-openharmony/generated"
 import { getAnimationConfig } from '../animations/AnimationHandler';
@@ -20,12 +44,16 @@ export struct RNSScreenStack {
   private eventEmitter: RNC.RNSScreenStack.EventEmitter | undefined = undefined
   @State private stack: number[] = []
   @State public topInset: number = 0;
+  private statusBarHeight: number = 0;
   @State private isFirstNavigator: boolean | undefined = undefined;
   @Watch("onDescriptorChange") @State descriptor: RNSScreenStackDescriptor = {} as RNSScreenStackDescriptor
   @State replaceAnimation: string = "push";
   @State presentation: string = "push";
   static RECORD_PRESENTATION: string = "push";
   static ROOT_TAG: number = 0;
+  @StorageLink("ScreenStackStatusBarHeight") ScreenStackStatusBarHeight: number| undefined = 0;
+  @StorageLink("isStatusBarShow") isStatusBarShow: boolean = true;
+  static STATUS_BAR_HEIGHT: number = 0;
 
   updateStack(newChildren: number[]) {
     if (!newChildren || this.stack.length === 0) {
@@ -78,6 +106,14 @@ export struct RNSScreenStack {
       }
     ))
     this.safeAreaInsets = new SafeAreaInsets(this.ctx)
+    if (true) {
+      const insets = await this.safeAreaInsets.getSafeAreaInsets()
+      this.statusBarHeight = insets.top;
+      if (RNSScreenStack.STATUS_BAR_HEIGHT === 0 && insets.top > 0) {
+        RNSScreenStack.STATUS_BAR_HEIGHT = insets.top;
+      }
+    }
+
     // FIXME: the approach of detecting if navigator should be moved down by the top safe area must be changed
     // we don't know if there isn't something above this navigator (although it shouldn't - but what about brownfield?)
     if (!RNSScreenStack.firstStackPerRNInstance.get(this.ctx.rnInstance.getId())) {
@@ -87,6 +123,7 @@ export struct RNSScreenStack {
     if (this.isFirstNavigator) {
       const insets = await this.safeAreaInsets.getSafeAreaInsets()
       this.topInset = insets.top
+      this.ScreenStackStatusBarHeight = this.topInset;
     }
     this.stackController.pushPathByName(this.stack[0].toString(), null)
   }
@@ -108,6 +145,7 @@ export struct RNSScreenStack {
       isFirstScreenInStack: this.stack.indexOf(Number(tag)) === 0,
       customTransitionCoordinator: this.customTransitionCoordinator,
       topInset: this.topInset,
+      statusBarHeight: this.statusBarHeight,
       screenPropsChange: this.screenPropsChange.bind(this),
     })
   }
@@ -239,7 +277,7 @@ export struct RNSScreenStack {
             operation: NavigationOperation) => this.customNavContentTransitionHandler(from, to, operation))
       }
     }.margin({
-      top: this.topInset
+      top: this.isFirstNavigator?this.ScreenStackStatusBarHeight:0
     })
   }
 }

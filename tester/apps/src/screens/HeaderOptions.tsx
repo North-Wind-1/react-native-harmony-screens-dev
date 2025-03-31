@@ -43,6 +43,7 @@ const MainScreen = ({navigation}: MainScreenProps): React.JSX.Element => {
 
 type HeaderItemPosition = 'left' | 'center' | 'right';
 type HeaderTitleAlignment = 'left' | 'center';
+type FontWeight =  'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
 
 interface SettingsScreenProps {
   navigation: NativeStackNavigationProp<StackParamList, 'Settings'>;
@@ -66,6 +67,11 @@ const SettingsScreen = ({
   const [headerBlurEffect, setHeaderBlurEffect] =
     useState<BlurEffectTypes>('extraLight');
 
+  const [backgroundColor, setBackgroundColor] = useState('#0000ff');  
+  const [color, setColor] = useState('#FF69B4');
+  const [fontSize, setFontSize] = useState(18);
+  const [fontWeight, setFontWeight] = useState<FontWeight>('normal'); 
+
   const square = (props: {tintColor?: string}) => (
     <Square {...props} color="green" size={20} />
   );
@@ -84,6 +90,14 @@ const SettingsScreen = ({
       headerShadowVisible,
       headerTransparent,
       headerBlurEffect,
+      headerStyle: {
+        backgroundColor,
+      },
+      headerTitleStyle:{
+        color,
+        fontSize,
+        fontWeight, 
+      }
     });
   }, [
     navigation,
@@ -97,6 +111,10 @@ const SettingsScreen = ({
     headerShadowVisible,
     headerTransparent,
     headerBlurEffect,
+    backgroundColor,
+    color,
+    fontSize,
+    fontWeight,
   ]);
 
   return (
@@ -165,6 +183,34 @@ const SettingsScreen = ({
         }}
         items={['left', 'center', 'right']}
       />
+      <SettingsInput
+        label="Header backgroundColor"
+        value={backgroundColor}
+        onValueChange={setBackgroundColor}
+      />
+      <SettingsInput
+        label="Header titleColor"
+        value={color}
+        onValueChange={setColor}
+      />
+      <Button
+        onPress={() => {
+          setFontSize(12)
+        }}
+        title="set titleFontSize 12"
+        testID="Header-titleFontSize"
+      />      
+      <SettingsPicker<FontWeight>
+        label="Header titleFontWeight"
+        value={fontWeight}
+        items={[
+         'normal',
+         'bold',
+         '100',
+         '200',
+        ]}
+        onValueChange={setFontWeight}
+      /> 
       <Text style={styles.heading}>iOS only</Text>
       <SettingsSwitch
         label="Header large title"
@@ -229,8 +275,7 @@ const App = (): React.JSX.Element => (
         options={{
           headerTintColor: '#FF69B4',
         }}
-      />
-      // headerTintColor: 'hotpink',
+      />      
     </Stack.Navigator>
   </ToastProvider>
 );

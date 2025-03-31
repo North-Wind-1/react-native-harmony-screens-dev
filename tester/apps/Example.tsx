@@ -32,10 +32,11 @@ import SearchBar from './src/screens/SearchBar';
 import Events from './src/screens/Events';
 import Gestures from './src/screens/Gestures';
 
-import {enableFreeze} from 'react-native-screens';
+import {enableFreeze, enableScreens} from 'react-native-screens';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 
 enableFreeze();
+enableScreens(true);
 
 const SCREENS: Record<
   string,

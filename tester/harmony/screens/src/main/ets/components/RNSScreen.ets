@@ -1,3 +1,27 @@
+/**
+ * MIT License
+ *
+ * Copyright (C) 2025 Huawei Device Co., Ltd.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 import {
   convertColorValueToHex,
   Descriptor,
@@ -13,6 +37,7 @@ import { RNSScreenTitleHeader } from "./RNSScreenTitleHeader"
 import { TITLEBAR_HEIGHT } from '../Constants';
 import common from '@ohos.app.ability.common';
 import i18n from '@ohos.i18n';
+import { RNSScreenStack } from './RNSScreenStack'
 
 export type RNSScreenDescriptor = Descriptor<"RNSScreen", RNC.RNSScreen.Props>
 
@@ -54,6 +79,7 @@ export struct RNSScreen {
   static ROOT_TAG: number = 0;
 
   @State public topInset: number = 0;
+  private topInsetTmp: number = 0;
   public screenPropsChange: (replaceAnimation: string, presentation: string) => void = (r: string, p: string)=>{};
   private gestureEnabled: boolean = false;
   private fullScreenSwipeEnabled: boolean = false;
@@ -68,7 +94,11 @@ export struct RNSScreen {
   private translation: number = 0;
   private velocity: number = 0;
   private distance: number = 0;
-  static TOP_PAGEID: string = 'default'
+  private static TOP_PAGEID: string = 'default'
+  private static RECORD_TOP_PAGEID: string = 'default'
+
+  @StorageLink("isStatusBarShow") isStatusBarShow: boolean = false;
+  private statusBarHeight: number = 0;
   private preventNativeDismiss: boolean = false;
   private directions: string= ''
   @State titleBarTranslucent: boolean = false;
@@ -87,7 +117,6 @@ export struct RNSScreen {
   @State opacityValue: number = 1;
   @State screenOrientation: string = 'default';
 
-  // todo test gestureEnable
   @State offsetX: number = 0;
   @State offsetY: number = 0;
   @State positionX: number = 0;
@@ -121,9 +150,9 @@ export struct RNSScreen {
     this.eventEmitter = new RNC.RNSScreen.EventEmitter(this.ctx.rnInstance, this.tag)
     this.descriptor = this.ctx.descriptorRegistry.getDescriptor<RNSScreenDescriptor>(this.tag)
     this.cleanUpCallbacks.push(this.ctx.descriptorRegistry.subscribeToDescriptorChanges(this.tag,
-      (newDescriptor) => {
+      async (newDescriptor) => {
         this.descriptor = (newDescriptor as RNSScreenDescriptor)
-        this.updateState()
+        await this.updateState();
         this.setScreenOrientation();
       }
     ))
@@ -143,22 +172,23 @@ export struct RNSScreen {
       ))
       this.updateHeaderConfigState()
     }
-
-    this.updateState()
+    await this.updateState()
     this.setScreenOrientation();
   }
 
   aboutToDisappear() {
     this.cleanUpCallbacks.forEach(cb => cb())
+    if(RNSScreen.RECORD_TOP_PAGEID !== 'default' && RNSScreen.RECORD_TOP_PAGEID !== 'default') {
+      RNSScreen.TOP_PAGEID = RNSScreen.RECORD_TOP_PAGEID;
+      RNSScreen.RECORD_TOP_PAGEID = 'default';
+    }
   }
 
   onScreenPropsChange(presentation: string) {
     this.screenPropsChange(this.replaceAnimation, presentation)
   }
-  
-  async updateState(forceUpdate: boolean = false) {
-    // this.updateNativeHeaderHeight() // todo edit
 
+  async updateState(forceUpdate: boolean = false) {
     this.preventNativeDismiss = this.descriptor.rawProps["preventNativeDismiss"];
     this.gestureEnabled = this.descriptor.rawProps["gestureEnabled"];
     this.fullScreenSwipeEnabled = this.descriptor.rawProps["fullScreenSwipeEnabled"];
@@ -206,11 +236,14 @@ export struct RNSScreen {
     } else {
       statusBarColor = statusBarColorTmp;
     }
+    let statusBarHiddenTmp: boolean = this.descriptor.rawProps["statusBarHidden"];
+    if(!!!statusBarHiddenTmp) {
+      statusBarHiddenTmp = false;
+    }
     const newStatusBarConfiguration: StatusBarConfiguration = {
       statusBarStyle: this.descriptor.rawProps["statusBarStyle"],
       statusBarAnimation: this.descriptor.rawProps["statusBarAnimation"] !== "none",
-      statusBarHidden: this.descriptor.rawProps["statusBarHidden"],
-      // statusBarColor: convertColorValueToHex(this.descriptor.rawProps["statusBarColor"])
+      statusBarHidden: statusBarHiddenTmp,
       statusBarColor: statusBarColor
     }
     let statusBarContentColor = "#000000"
@@ -223,15 +256,31 @@ export struct RNSScreen {
     } else {
       newStatusBarConfiguration.statusBarColor = statusBarColor;
     }
+    this.stackPresentationMode = presentation;
+
     if (JSON.stringify(this.statusBarConfiguration) !== JSON.stringify(newStatusBarConfiguration) || this.stackPresentationMode !== presentation || this.stackPresentationMode !== 'fullScreenModal') {
       this.statusBarConfiguration = newStatusBarConfiguration
       const windowInstance = await window.getLastWindow(this.ctx.uiAbilityContext);
-      this.stackPresentationMode = presentation;
-      if (this.stackPresentationMode === 'fullScreenModal') {
-        await windowInstance.setSpecificSystemBarEnabled('status', false);
-      } else {
-        await windowInstance.setSpecificSystemBarEnabled('status', !this.statusBarConfiguration.statusBarHidden);
+
+      if(this.pageId !== "default" && this.pageId === RNSScreen.TOP_PAGEID) {
+        if (this.stackPresentationMode === 'fullScreenModal') {
+          await windowInstance.setSpecificSystemBarEnabled('status', false);
+          this.isStatusBarShow = false;
+          AppStorage.setOrCreate('isStatusBarShow', false);
+          AppStorage.setOrCreate('ScreenStackStatusBarHeight', 0);
+        } else {
+          await windowInstance.setSpecificSystemBarEnabled('status', !this.statusBarConfiguration.statusBarHidden);
+          AppStorage.setOrCreate('isStatusBarShow', !this.statusBarConfiguration.statusBarHidden);
+          if (!this.statusBarConfiguration.statusBarHidden) {
+            this.isStatusBarShow = true;
+            AppStorage.setOrCreate('ScreenStackStatusBarHeight', this.statusBarHeight>0?this.statusBarHeight:RNSScreenStack.STATUS_BAR_HEIGHT);
+          } else {
+            this.isStatusBarShow = false;
+            AppStorage.setOrCreate('ScreenStackStatusBarHeight', 0);
+          }
+        }
       }
+
       windowInstance.setWindowSystemBarProperties({
         statusBarContentColor: statusBarContentColor,
         statusBarColor: this.statusBarConfiguration.statusBarColor,
@@ -300,8 +349,17 @@ export struct RNSScreen {
       this.titleHeight = newTitleHeight;
     }
 
+    if (this.pageId === 'default') {
+      return;
+    }
+
+    if (this.isStatusBarShow) {
+      this.titleHeight+=0.17;
+    } else {
+      this.titleHeight-=0.17;
+    }
     this.eventEmitter?.emit("headerHeightChange", {
-      headerHeight: this.topInset + this.titleHeight
+      headerHeight: (this.isStatusBarShow?this.topInset:0) + this.titleHeight
     })
   }
 
@@ -405,7 +463,6 @@ export struct RNSScreen {
 
     let flag = false;
     // if (this.customAnimationOnSwipe && this.isCustomAnimation()) {
-    // if (this.isCustomAnimation())
     {
       let isRTL = this.isRtl();
       let isSlideFromLeft: boolean = this.stackAnimation === "slide_from_left";
@@ -440,17 +497,14 @@ export struct RNSScreen {
       } else  {
         this.offsetX = this.positionX + event.offsetX;
       }
-
 //      this.translateXValue = this.offsetX.toString();
     }
 
-    // todo animation
     let isInverted: boolean = this.stackAnimation === "slide_from_left";
     let transitionProgress: number = (this.translation / this.distance);
     transitionProgress = isInverted ? transitionProgress * -1 : transitionProgress;
     this.eventEmitter!.emit("transitionProgress", {progress: transitionProgress, closing: true ? 1 : 0, goingForward: false ? 1 : 0})
     this.customTransitionCoordinator.updateProgress(transitionProgress);
-
   }
 
   @Builder
@@ -491,7 +545,7 @@ export struct RNSScreen {
         Stack() {
           ContentSlot(this.ctx.getContentForTag(this.tag))
         }.offset({
-          top: -this.topInset - this.titleHeight
+          top: (this.isStatusBarShow?-this.topInset:0) - this.titleHeight
         })
       }
     }
@@ -514,13 +568,24 @@ export struct RNSScreen {
       this.eventEmitter!.emit("appear", {})
     })
     .onShown(() => {
-      RNSScreen.TOP_PAGEID =  this.pageId;
+      if (RNSScreen.TOP_PAGEID !== 'default' && (this.stackPresentationMode === 'modal'
+        || this.stackPresentationMode === 'transparentModal' || this.stackPresentationMode === 'containedModal'
+        || this.stackPresentationMode === 'containedTransparentModal' || this.stackPresentationMode === 'formSheet'
+        || this.stackPresentationMode === 'fullScreenModal'
+      )) {
+        RNSScreen.RECORD_TOP_PAGEID = RNSScreen.TOP_PAGEID;
+      }
+      RNSScreen.TOP_PAGEID = this.pageId;
       this.updateState(true)
       this.updateHeaderConfigState()
       this.setScreenOrientation()
     })
     .onWillDisappear(() => {
       this.eventEmitter!.emit("willDisappear", {})
+      if(RNSScreen.RECORD_TOP_PAGEID !== 'default' && RNSScreen.RECORD_TOP_PAGEID !== 'default' && this.stackPresentationMode === 'fullScreenModal') {
+        RNSScreen.TOP_PAGEID = RNSScreen.RECORD_TOP_PAGEID;
+        RNSScreen.RECORD_TOP_PAGEID = 'default';
+      }
     })
     .onDisAppear(() => {
       this.customTransitionCoordinator.unregisterNavParam(this.pageId);
@@ -538,7 +603,7 @@ export struct RNSScreen {
         .onActionStart((event: GestureEvent) => {
           this.couldSwipe = this.gestureRecognizerShouldBegin(event)
           if (this.couldSwipe) {
-            this.isInverted = this.stackAnimation === "slide_from_left"; // todo edit
+            this.isInverted = this.stackAnimation === "slide_from_left";
           }
         })
         .onActionUpdate((event: GestureEvent) => {

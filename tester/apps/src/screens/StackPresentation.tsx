@@ -5,7 +5,7 @@ import {
   createNativeStackNavigator,
   NativeStackNavigationProp,
 } from '@react-navigation/native-stack';
-import { Button, Form, Choose, Alert, Dialog, FormSheetForm } from '../shared';
+import { Button, Form, Choose, Alert, Dialog } from '../shared';
 
 type StackParamList = {
   Main: undefined;
@@ -65,7 +65,7 @@ const MainScreen = ({ navigation }: MainScreenProps): React.JSX.Element => {
       <Button
         testID="stack-presentation-go-back-button"
         onPress={() => navigation.pop()}
-        title="� Back to Examples"
+        title="🔙 Back to Examples"
       />
     </ScrollView>
   );
@@ -97,18 +97,13 @@ const FormScreenContent = ({ navigation }: { navigation: NativeStackNavigationPr
   </>
 );
 
-const FormSheetScreenContent = ({ navigation }: { navigation: NativeStackNavigationProp<StackParamList, 'Push' | 'FormSheet'> }) => (
-  <>
-    <FormSheetForm/>
-  </>
-);
 
 const FormScreen = ({ navigation, route }: FormScreenProps): React.JSX.Element => {
   const isFormSheet = route.params?.usesFormSheetPresentation ?? false;
 
   return (
     <View style={!isFormSheet ? styles.container : null}>
-      <FormSheetScreenContent navigation={navigation} />
+      <FormScreenContent navigation={navigation} />
     </View>
   );
 }
@@ -204,16 +199,12 @@ const App = (): React.JSX.Element => (
     <Stack.Screen
       name="FormSheet"
       component={FormScreen}
-      options={{
-        presentation: 'formSheet',
-        headerShown: false,
-        sheetAllowedDetents: 'all'
+      options={{ presentation: 'formSheet', sheetAllowedDetents: 'all' }}
+      initialParams={{
+        usesFormSheetPresentation: true
       }}
-      // initialParams={{
-      //   usesFormSheetPresentation: true
-      // }}
     />
-    
+    {/* options={{ presentation: 'formSheet', sheetAllowedDetents: [0.5, 0.85] }} */}
   </Stack.Navigator>
 );
 
