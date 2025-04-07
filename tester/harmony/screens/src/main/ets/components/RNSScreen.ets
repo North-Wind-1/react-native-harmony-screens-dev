@@ -23,6 +23,7 @@
  */
 
 import {
+  ColorValue,
   convertColorValueToHex,
   Descriptor,
   RNComponentContext,
@@ -97,11 +98,13 @@ export struct RNSScreen {
   private static TOP_PAGEID: string = 'default'
   private static RECORD_TOP_PAGEID: string = 'default'
 
-  @StorageLink("isStatusBarShow") isStatusBarShow: boolean = false;
+  @State isStatusBarShow: boolean = false;
   private statusBarHeight: number = 0;
   private preventNativeDismiss: boolean = false;
   private directions: string= ''
   @State titleBarTranslucent: boolean = false;
+  @State topInsetEnabled: boolean = true;
+  @State titleBarBgColor: string = '#ffffffff';
 
   @State descriptor: RNSScreenDescriptor = {} as RNSScreenDescriptor
   @State screenStackHeaderConfigDescriptor: RNSScreenStackHeaderConfigDescriptor | undefined = undefined
@@ -178,10 +181,6 @@ export struct RNSScreen {
 
   aboutToDisappear() {
     this.cleanUpCallbacks.forEach(cb => cb())
-    if(RNSScreen.RECORD_TOP_PAGEID !== 'default' && RNSScreen.RECORD_TOP_PAGEID !== 'default') {
-      RNSScreen.TOP_PAGEID = RNSScreen.RECORD_TOP_PAGEID;
-      RNSScreen.RECORD_TOP_PAGEID = 'default';
-    }
   }
 
   onScreenPropsChange(presentation: string) {
@@ -213,7 +212,7 @@ export struct RNSScreen {
       this.replaceAnimation = this.descriptor.rawProps["replaceAnimation"] || "push"
     }
 
-    const presentation: string = this.descriptor.rawProps["stackPresentation"] || "push";
+    const presentation: string = this.descriptor.rawProps["stackPresentation"];
     this.onScreenPropsChange(presentation)
     if (["modal", "transparentModal", "containedModal", "containedTransparentModal",
       "fullScreenModal", "formSheet"].includes(presentation)) {
@@ -262,28 +261,20 @@ export struct RNSScreen {
       this.statusBarConfiguration = newStatusBarConfiguration
       const windowInstance = await window.getLastWindow(this.ctx.uiAbilityContext);
 
-      if(this.pageId !== "default" && this.pageId === RNSScreen.TOP_PAGEID) {
-        if (this.stackPresentationMode === 'fullScreenModal') {
-          await windowInstance.setSpecificSystemBarEnabled('status', false);
-          this.isStatusBarShow = false;
-          AppStorage.setOrCreate('isStatusBarShow', false);
-          AppStorage.setOrCreate('ScreenStackStatusBarHeight', 0);
-        } else {
+      if(this.pageId !== "default") {
+        {
           await windowInstance.setSpecificSystemBarEnabled('status', !this.statusBarConfiguration.statusBarHidden);
-          AppStorage.setOrCreate('isStatusBarShow', !this.statusBarConfiguration.statusBarHidden);
           if (!this.statusBarConfiguration.statusBarHidden) {
             this.isStatusBarShow = true;
-            AppStorage.setOrCreate('ScreenStackStatusBarHeight', this.statusBarHeight>0?this.statusBarHeight:RNSScreenStack.STATUS_BAR_HEIGHT);
           } else {
             this.isStatusBarShow = false;
-            AppStorage.setOrCreate('ScreenStackStatusBarHeight', 0);
           }
         }
       }
 
       windowInstance.setWindowSystemBarProperties({
         statusBarContentColor: statusBarContentColor,
-        statusBarColor: this.statusBarConfiguration.statusBarColor,
+        // statusBarColor: this.statusBarConfiguration.statusBarColor,
         enableStatusBarAnimation: this.statusBarConfiguration.statusBarAnimation,
       });
     }
@@ -302,11 +293,7 @@ export struct RNSScreen {
       this.navigationBarConfiguration = TmpNavigationBarConfiguration;
       const windowInstance = await window.getLastWindow(this.ctx.uiAbilityContext);
 
-      if (this.stackPresentationMode === 'fullScreenModal') {
-        await windowInstance.setSpecificSystemBarEnabled('navigation', false);
-      } else {
-        await windowInstance.setSpecificSystemBarEnabled('navigation', !this.navigationBarConfiguration.navigationBarHidden);
-      }
+      await windowInstance.setSpecificSystemBarEnabled('navigation', !this.navigationBarConfiguration.navigationBarHidden);
       windowInstance.setWindowSystemBarProperties({
         navigationBarColor: this.navigationBarConfiguration.navigationBarColor
       });
@@ -314,12 +301,10 @@ export struct RNSScreen {
     this.updateNativeHeaderHeight();
   }
 
-  updateHeaderConfigState() {
+  async updateHeaderConfigState() {
     if (!this.screenStackHeaderConfigDescriptor) {
       return
     }
-
-    this.updateNativeHeaderHeight()
 
     if (this.shouldHideTitleBar !== (this.screenStackHeaderConfigDescriptor.rawProps["hidden"])) {
       this.shouldHideTitleBar = this.screenStackHeaderConfigDescriptor.rawProps["hidden"]
@@ -327,7 +312,21 @@ export struct RNSScreen {
 
     if (this.titleBarBackgroundColor !== this.screenStackHeaderConfigDescriptor.rawProps["backgroundColor"]) {
       this.titleBarBackgroundColor = this.screenStackHeaderConfigDescriptor.rawProps["backgroundColor"]
+      let tmp: ColorValue = this.screenStackHeaderConfigDescriptor.rawProps["backgroundColor"];
+      if(tmp  && tmp.toString().startsWith('rgb')) {
+        let r = convertColorValueToHex(tmp);
+        this.titleBarBackgroundColor = r;
+      }
     }
+
+    if(!this.shouldHideTitleBar && this.titleBarBackgroundColor) {
+      const windowInstance = await window.getLastWindow(this.ctx.uiAbilityContext);
+      windowInstance.setWindowSystemBarProperties({
+        statusBarColor: this.titleBarBackgroundColor || this.statusBarConfiguration.statusBarColor
+      });
+    }
+
+    this.updateNativeHeaderHeight();
   }
 
   updateNativeHeaderHeight() {
@@ -335,6 +334,7 @@ export struct RNSScreen {
       return
     }
 
+    this.topInsetEnabled = this.screenStackHeaderConfigDescriptor.rawProps["topInsetEnabled"];
     this.directions = this.screenStackHeaderConfigDescriptor.rawProps["direction"];
     this.titleBarTranslucent = this.screenStackHeaderConfigDescriptor.rawProps["translucent"];
     let newTitleHeight: number = this.titleHeight;
@@ -353,14 +353,16 @@ export struct RNSScreen {
       return;
     }
 
-    if (this.isStatusBarShow) {
-      this.titleHeight+=0.17;
+    if(this.titleBarBackgroundColor === 'transparent'){
+      this.eventEmitter?.emit("headerHeightChange", {
+        headerHeight: 0
+      })
     } else {
-      this.titleHeight-=0.17;
+      this.eventEmitter?.emit("headerHeightChange", {
+        headerHeight:(!this.shouldHideTitleBar?(this.isStatusBarShow?(this.stackPresentationMode===''?0:(this.topInsetEnabled?this.statusBarHeight:0)):0):0)+this.titleHeight
+      })
     }
-    this.eventEmitter?.emit("headerHeightChange", {
-      headerHeight: (this.isStatusBarShow?this.topInset:0) + this.titleHeight
-    })
+
   }
 
   handleAnimation(animationType: string, animationEvent: AnimationHandlerEvent): void {
@@ -507,13 +509,18 @@ export struct RNSScreen {
     this.customTransitionCoordinator.updateProgress(transitionProgress);
   }
 
+  private backBtnPressed() {
+    this.backPressed();
+  }
+
   @Builder
   screenTitleBuilder() {
     RNSScreenTitleHeader({
       ctx: this.ctx,
       screenStackHeaderConfigTag: this.screenStackHeaderConfigTag,
-      isFirstScreenInStack: this.isFirstScreenInStack
-    })
+      isFirstScreenInStack: this.isFirstScreenInStack,
+      backBtnPressed: this.backBtnPressed.bind(this),
+    }).position({ x:0, y: (!this.shouldHideTitleBar?(this.isStatusBarShow?(this.stackPresentationMode===''?0:(this.topInsetEnabled?this.statusBarHeight:0)):0):0) })
   }
 
   private isComponentOfType(childTag: number, componentType: string): boolean {
@@ -543,15 +550,18 @@ export struct RNSScreen {
     NavDestination() {
       RNViewBase({ ctx: this.ctx, tag: this.tag }) {
         Stack() {
-          ContentSlot(this.ctx.getContentForTag(this.tag))
-        }.offset({
-          top: (this.isStatusBarShow?-this.topInset:0) - this.titleHeight
-        })
+          Stack(){
+            ContentSlot(this.ctx.getContentForTag(this.tag))
+          }
+
+          if (this.stackPresentationMode !== '' && !this.shouldHideTitleBar) {
+            this.screenTitleBuilder()
+          }
+        }
       }
+
     }
-    .title({ builder: this.screenTitleBuilder, height: this.titleHeight }, {
-      backgroundColor: this.titleBarTranslucent?Color.Transparent:this.titleBarBackgroundColor,
-    })
+    .hideTitleBar(true)
     .mode(this.presentationMode)
     .onReady((context: NavDestinationContext) => {
       if (context.navDestinationId) {
@@ -560,7 +570,6 @@ export struct RNSScreen {
         this.stackController = context.pathStack;
       }
     })
-    .hideTitleBar(this.shouldHideTitleBar)
     .onWillAppear(() => {
       this.eventEmitter!.emit("willAppear", {})
     })
@@ -568,13 +577,6 @@ export struct RNSScreen {
       this.eventEmitter!.emit("appear", {})
     })
     .onShown(() => {
-      if (RNSScreen.TOP_PAGEID !== 'default' && (this.stackPresentationMode === 'modal'
-        || this.stackPresentationMode === 'transparentModal' || this.stackPresentationMode === 'containedModal'
-        || this.stackPresentationMode === 'containedTransparentModal' || this.stackPresentationMode === 'formSheet'
-        || this.stackPresentationMode === 'fullScreenModal'
-      )) {
-        RNSScreen.RECORD_TOP_PAGEID = RNSScreen.TOP_PAGEID;
-      }
       RNSScreen.TOP_PAGEID = this.pageId;
       this.updateState(true)
       this.updateHeaderConfigState()
@@ -582,10 +584,6 @@ export struct RNSScreen {
     })
     .onWillDisappear(() => {
       this.eventEmitter!.emit("willDisappear", {})
-      if(RNSScreen.RECORD_TOP_PAGEID !== 'default' && RNSScreen.RECORD_TOP_PAGEID !== 'default' && this.stackPresentationMode === 'fullScreenModal') {
-        RNSScreen.TOP_PAGEID = RNSScreen.RECORD_TOP_PAGEID;
-        RNSScreen.RECORD_TOP_PAGEID = 'default';
-      }
     })
     .onDisAppear(() => {
       this.customTransitionCoordinator.unregisterNavParam(this.pageId);

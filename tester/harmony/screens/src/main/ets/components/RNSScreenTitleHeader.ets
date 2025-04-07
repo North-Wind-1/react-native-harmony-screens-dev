@@ -38,8 +38,17 @@ export struct RNSScreenTitleHeader {
   @State titleFontSizeValue: string | undefined = undefined;
   @State titleFontWeightValue: string | undefined = undefined;
   @State titleColorValue: string | undefined = undefined;
+  @State backgroundColorValue: string | undefined = undefined;
+  @State isTitleBarHidden: boolean = false;
   @State hideShadow: boolean = false;
+  @State backTitle: string | undefined = undefined;
+  @State backTitleFontFamily: string | undefined = undefined;
+  @State backTitleFontSize: number | undefined = undefined;
+  @State backTitleVisible: boolean | undefined = undefined;
+  @State hideBackButton: boolean | undefined = undefined;
   private cleanUpCallbacks: (() => void)[] = []
+  public backBtnPressed: () => void = () => {
+  }
 
   aboutToAppear(): void {
     this.descriptor =
@@ -87,39 +96,92 @@ export struct RNSScreenTitleHeader {
     if (this.titleColorValue !== this.descriptor.rawProps["titleColor"]) {
       this.titleColorValue = this.descriptor.rawProps["titleColor"]
     }
+    if (this.backgroundColorValue !== this.descriptor.rawProps["backgroundColor"]) {
+      this.backgroundColorValue = this.descriptor.rawProps["backgroundColor"] || "#ffffff"
+    }
+
+    if (this.backTitle !== this.descriptor.rawProps["backTitle"]) {
+      this.backTitle = this.descriptor.rawProps["backTitle"]
+    }
+
+    if (this.backTitleFontFamily !== this.descriptor.rawProps["backTitleFontFamily"]) {
+      this.backTitleFontFamily = this.descriptor.rawProps["backTitleFontFamily"]
+    }
+
+    if (this.backTitleFontSize !== this.descriptor.rawProps["backTitleFontSize"]) {
+      this.backTitleFontSize = this.descriptor.rawProps["backTitleFontSize"]
+    }
+
+    if (this.backTitleVisible !== this.descriptor.rawProps["backTitleVisible"]) {
+      this.backTitleVisible = this.descriptor.rawProps["backTitleVisible"]
+    }
+
+    if (this.hideBackButton !== this.descriptor.rawProps["hideBackButton"]) {
+      this.hideBackButton = this.descriptor.rawProps["hideBackButton"]
+    }
   }
 
   build() {
     Column() {
       Stack() {
-        Text(this.nativeTitleText)
-          .width("100%")
-          .height("100%")
-          .offset({
-            left: TITLEBAR_HEIGHT + NATIVE_BUTTON_VERTICAL_EDGE_MARGIN
-          })
-          .fontFamily(this.fontFamilyValue)
-          .fontSize(this.titleFontSizeValue?this.titleFontSizeValue:18)
-          .fontWeight(this.titleFontWeightValue?this.titleFontWeightValue:FontWeight.Medium)
-          .fontColor(this.titleColorValue)
-          .textAlign(TextAlign.Start)
-        if (this.descriptor) {
-          ForEach(this.descriptor.childrenTags, (childTag: number) => {
-            RNSScreenStackHeaderSubview({
-              ctx: this.ctx,
-              tag: childTag,
-              isFirstScreenInStack: this.isFirstScreenInStack
+        Row() {
+          if (!this.isFirstScreenInStack) {
+            Row() {
+              SymbolGlyph($r('sys.symbol.arrow_left')).fontSize(26).fontColor([this.titleColorValue])
+                .visibility(this.hideBackButton ? Visibility.None : Visibility.Visible)
+
+              if (this.backTitleVisible) {
+                Text(this.backTitle ? this.backTitle : '')
+                  .fontFamily(this.backTitleFontFamily)
+                  .fontSize(this.backTitleFontSize ? this.backTitleFontSize : 18)
+                  .fontColor(this.titleColorValue)
+                  .margin({ left: this.hideBackButton ? 0 : 5, right: (this.backTitleVisible && this.backTitle) ? 5 : 0 })
+              }
+            }.height(56)
+            .onClick(() => {
+              if (this.backBtnPressed) {
+                this.backBtnPressed();
+              }
             })
-          })
+          }
+          Text(this.nativeTitleText)
+            .height("100%")
+            .fontFamily(this.fontFamilyValue)
+            .fontSize(this.titleFontSizeValue ? this.titleFontSizeValue : 18)
+            .fontWeight(this.titleFontWeightValue ? this.titleFontWeightValue : FontWeight.Medium)
+            .fontColor(this.titleColorValue)
+            .textAlign(TextAlign.Start)
         }
-      }
-      .width("100%")
-      .height("100%")
-      .hitTestBehavior(HitTestMode.Transparent)
-      .offset({
-        right: TITLEBAR_HEIGHT
-      })
-    }.width("100%")
-    .height("100%")
+        .width("100%")
+        .height("100%")
+        .layoutWeight(1)
+        .hitTestBehavior(HitTestMode.Transparent)
+
+        Stack() {
+          if (this.descriptor) {
+            ForEach(this.descriptor.childrenTags, (childTag: number) => {
+              RNSScreenStackHeaderSubview({
+                ctx: this.ctx,
+                tag: childTag,
+                isFirstScreenInStack: this.isFirstScreenInStack
+              })
+            })
+          }
+        }
+        .width("100%")
+        .height("100%")
+        .layoutWeight(1)
+        .hitTestBehavior(HitTestMode.Transparent)
+
+      }.width("100%")
+      .height(56)
+      .layoutWeight(1)
+      .padding({ left: 10, right: 10 })
+      .backgroundColor(this.backgroundColorValue)
+    }
+    .width("100%")
+    .height(56)
+    .layoutWeight(1)
+    .hitTestBehavior(HitTestMode.Transparent)
   }
 }

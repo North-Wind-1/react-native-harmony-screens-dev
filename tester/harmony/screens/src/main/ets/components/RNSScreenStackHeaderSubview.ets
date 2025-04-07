@@ -39,8 +39,8 @@ export struct RNSScreenStackHeaderSubview {
   private cleanUpCallbacks: (() => void)[] = []
   @State alignment: HorizontalAlign = HorizontalAlign.Center
   @State isSearchBar: boolean = false
-  @State searchBarTag: number| undefined = -1
-  @State subviewType: string| undefined = undefined
+  @State searchBarTag: number | undefined = -1
+  @State subviewType: string | undefined = undefined
 
   aboutToAppear() {
     this.descriptor = this.ctx.descriptorRegistry.getDescriptor<RNSScreenStackHeaderSubviewDescriptor>(this.tag)
@@ -107,10 +107,6 @@ export struct RNSScreenStackHeaderSubview {
       .height("100%")
       .justifyContent(FlexAlign.Center)
       .alignItems(this.alignment)
-      .margin({
-        left: this.alignment === HorizontalAlign.Start ? NATIVE_BUTTON_OFFSET : 0,
-        right: this.alignment === HorizontalAlign.End ? NATIVE_BUTTON_OFFSET : 0,
-      })
     }
   }
 }

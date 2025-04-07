@@ -51,8 +51,6 @@ export struct RNSScreenStack {
   @State presentation: string = "push";
   static RECORD_PRESENTATION: string = "push";
   static ROOT_TAG: number = 0;
-  @StorageLink("ScreenStackStatusBarHeight") ScreenStackStatusBarHeight: number| undefined = 0;
-  @StorageLink("isStatusBarShow") isStatusBarShow: boolean = true;
   static STATUS_BAR_HEIGHT: number = 0;
 
   updateStack(newChildren: number[]) {
@@ -123,7 +121,6 @@ export struct RNSScreenStack {
     if (this.isFirstNavigator) {
       const insets = await this.safeAreaInsets.getSafeAreaInsets()
       this.topInset = insets.top
-      this.ScreenStackStatusBarHeight = this.topInset;
     }
     this.stackController.pushPathByName(this.stack[0].toString(), null)
   }
@@ -276,8 +273,6 @@ export struct RNSScreenStack {
           .customNavContentTransition((from: NavContentInfo, to: NavContentInfo,
             operation: NavigationOperation) => this.customNavContentTransitionHandler(from, to, operation))
       }
-    }.margin({
-      top: this.isFirstNavigator?this.ScreenStackStatusBarHeight:0
-    })
+    }
   }
 }

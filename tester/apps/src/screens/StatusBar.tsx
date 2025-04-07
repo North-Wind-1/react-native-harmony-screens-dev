@@ -34,7 +34,7 @@ const FirstScreen = ({ navigation }: FirstScreenProps): React.JSX.Element => {
     useState<StatusBarAnimation>('fade');
   const [statusBarTranslucent, setStatusBarTranslucent] = useState(true);
   const [statusBarBackgroundColor, setStatusBarBackgroundColor] =
-    useState('gray');
+    useState('#d3d3d3'); // gray
   const [statusBarColor, setStatusBarColor] =
     useState('#333333');
 
@@ -115,13 +115,15 @@ const App = (): React.JSX.Element => (
   <Stack.Navigator
     screenOptions={{
       headerStyle: {
-        backgroundColor: 'gray',
+        backgroundColor: '#d3d3d3',
       },
       headerTitleStyle: {
-        color: 'white',
+        color: '#ffffff',
       },
       headerBackVisible: false,
     }}>
+      {/* backgroundColor: 'gray', */}
+      
     <Stack.Screen
       name="First"
       component={FirstScreen}

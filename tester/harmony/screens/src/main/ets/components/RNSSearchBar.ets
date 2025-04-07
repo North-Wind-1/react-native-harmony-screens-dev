@@ -186,21 +186,19 @@ export struct RNSSearchBar {
                 this.cancelSearch()
               })
           }.width(200)
+          .justifyContent(FlexAlign.End)
         } else {
           SymbolGlyph($r('sys.symbol.magnifyingglass')).fontSize(26).onClick(() => {
             this.showTextInput = true;
             this.eventEmitter!.emit("open", {})
           })
         }
-      }
+      }.justifyContent(FlexAlign.End)
     }
     .width("100%")
     .height("100%")
     .justifyContent(FlexAlign.Center)
     .alignItems(HorizontalAlign.End)
-    .offset({
-      left: this.isFirstScreenInStack ? NATIVE_BUTTON_OFFSET - NATIVE_BUTTON_VERTICAL_EDGE_MARGIN :
-        -NATIVE_BUTTON_VERTICAL_EDGE_MARGIN,
-    })
+    .layoutWeight(1)
   }
 }
