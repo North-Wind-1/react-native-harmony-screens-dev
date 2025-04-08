@@ -46,6 +46,7 @@ export struct RNSScreenTitleHeader {
   @State backTitleFontSize: number | undefined = undefined;
   @State backTitleVisible: boolean | undefined = undefined;
   @State hideBackButton: boolean | undefined = undefined;
+  @State backButtonInCustomView: boolean | undefined = undefined;
   private cleanUpCallbacks: (() => void)[] = []
   public backBtnPressed: () => void = () => {
   }
@@ -118,6 +119,10 @@ export struct RNSScreenTitleHeader {
 
     if (this.hideBackButton !== this.descriptor.rawProps["hideBackButton"]) {
       this.hideBackButton = this.descriptor.rawProps["hideBackButton"]
+    }
+
+    if (this.backButtonInCustomView !== this.descriptor.rawProps["backButtonInCustomView"]) {
+      this.backButtonInCustomView = this.descriptor.rawProps["backButtonInCustomView"]
     }
   }
 

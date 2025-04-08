@@ -319,11 +319,8 @@ export struct RNSScreen {
       }
     }
 
-    if(!this.shouldHideTitleBar && this.titleBarBackgroundColor) {
-      const windowInstance = await window.getLastWindow(this.ctx.uiAbilityContext);
-      windowInstance.setWindowSystemBarProperties({
-        statusBarColor: this.titleBarBackgroundColor || this.statusBarConfiguration.statusBarColor
-      });
+    if (this.titleBarBackgroundColor) {
+      this.titleBarBgColor = this.titleBarBackgroundColor;
     }
 
     this.updateNativeHeaderHeight();
@@ -550,6 +547,10 @@ export struct RNSScreen {
     NavDestination() {
       RNViewBase({ ctx: this.ctx, tag: this.tag }) {
         Stack() {
+          if(this.isStatusBarShow) {
+            Text('').height(this.statusBarHeight).width('100%').backgroundColor(this.titleBarBgColor).position({x:0, y:0})
+          }
+
           Stack(){
             ContentSlot(this.ctx.getContentForTag(this.tag))
           }
@@ -579,7 +580,9 @@ export struct RNSScreen {
     .onShown(() => {
       RNSScreen.TOP_PAGEID = this.pageId;
       this.updateState(true)
+     setTimeout(()=>{
       this.updateHeaderConfigState()
+     }, 50)
       this.setScreenOrientation()
     })
     .onWillDisappear(() => {
