@@ -62,6 +62,7 @@ const SettingsScreen = ({
   const [headerLargeTitle, setHeaderLargeTitle] = useState(true);
   const [headerItem, setHeaderItem] = useState<HeaderItemPosition>('right');
   const [headerBackTitle, setHeaderBackTitle] = useState('Back');
+  const [headerBackTitleVisible, setHeaderBackTitleVisible] = useState(true);
   const [headerShadowVisible, setHeaderShadowVisible] = useState(false);
   const [headerTransparent, setHeaderTransparent] = useState(false);
   const [headerBlurEffect, setHeaderBlurEffect] =
@@ -79,7 +80,7 @@ const SettingsScreen = ({
   useLayoutEffect(() => {
     navigation.setOptions({
       headerBackVisible: backButtonVisible,
-      headerBackTitleVisible: backButtonVisible, // iOS
+      headerBackTitleVisible: backButtonVisible|| headerBackTitleVisible, // iOS
       headerLargeTitle, // iOS
       headerBackTitle, // iOS
       headerShown,
@@ -97,6 +98,9 @@ const SettingsScreen = ({
         color,
         fontSize,
         fontWeight, 
+      },
+      headerBackTitleStyle: {
+        fontSize
       }
     });
   }, [
@@ -105,6 +109,7 @@ const SettingsScreen = ({
     backButtonVisible,
     headerLargeTitle,
     headerBackTitle,
+    headerBackTitleVisible,
     headerItem,
     headerTitleAlign,
     headerShown,
@@ -164,6 +169,7 @@ const SettingsScreen = ({
             //   backgroundColor: 'orange',
             // });
             setBackButtonVisible(false);
+            setHeaderBackTitleVisible(false)
           }
           if (
             item === 'center' &&
@@ -221,6 +227,11 @@ const SettingsScreen = ({
         label="Header back title"
         value={headerBackTitle}
         onValueChange={setHeaderBackTitle}
+      />
+      <SettingsSwitch
+        label="Header back title visible:"
+        value={headerBackTitleVisible}
+        onValueChange={setHeaderBackTitleVisible}
       />
       <SettingsPicker<BlurEffectTypes>
         label="Header blur effect"

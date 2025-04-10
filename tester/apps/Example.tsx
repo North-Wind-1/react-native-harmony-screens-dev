@@ -207,13 +207,16 @@ const ExampleApp = (): React.JSX.Element => {
       <ThemeToggle.Provider value={{toggleTheme}}>
         <NavigationContainer theme={isDark ? DarkTheme : DefaultTheme}>
           <Stack.Navigator
-            screenOptions={{statusBarStyle: isDark ? 'light' : 'dark'}}>
+            screenOptions={{
+              statusBarStyle: isDark ? 'light' : 'dark',              
+            }}>
             <Stack.Screen
               name="Main"
               options={{
                 title: `${
                   Platform.isTV ? '📺' : '📱'
                 } React Native Screens Examples`,
+                headerShown: false,
               }}
               component={MainScreen}
             />

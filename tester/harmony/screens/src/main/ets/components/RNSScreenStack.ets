@@ -129,7 +129,7 @@ export struct RNSScreenStack {
     this.replaceAnimation = replaceAnimation;
     this.presentation = presentation;
   }
-  
+
   aboutToDisappear() {
     this.cleanUpCallbacks.forEach(cb => cb())
   }

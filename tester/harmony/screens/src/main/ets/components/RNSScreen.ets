@@ -104,7 +104,7 @@ export struct RNSScreen {
   private directions: string= ''
   @State titleBarTranslucent: boolean = false;
   @State topInsetEnabled: boolean = true;
-  @State titleBarBgColor: string = '#ffffffff';
+  @State titleBarBgColor: string = '#00000000';
 
   @State descriptor: RNSScreenDescriptor = {} as RNSScreenDescriptor
   @State screenStackHeaderConfigDescriptor: RNSScreenStackHeaderConfigDescriptor | undefined = undefined
@@ -319,8 +319,9 @@ export struct RNSScreen {
       }
     }
 
-    if (this.titleBarBackgroundColor) {
-      this.titleBarBgColor = this.titleBarBackgroundColor;
+    this.titleBarTranslucent = this.screenStackHeaderConfigDescriptor.rawProps["translucent"];
+    if (this.titleBarBackgroundColor || this.titleBarTranslucent) {
+      this.titleBarBgColor = this.titleBarTranslucent?"#00000000":(this.titleBarBackgroundColor?this.titleBarBackgroundColor:"#00000000");
     }
 
     this.updateNativeHeaderHeight();
@@ -333,7 +334,6 @@ export struct RNSScreen {
 
     this.topInsetEnabled = this.screenStackHeaderConfigDescriptor.rawProps["topInsetEnabled"];
     this.directions = this.screenStackHeaderConfigDescriptor.rawProps["direction"];
-    this.titleBarTranslucent = this.screenStackHeaderConfigDescriptor.rawProps["translucent"];
     let newTitleHeight: number = this.titleHeight;
     if (this.screenStackHeaderConfigDescriptor.rawProps["hidden"] ||
       this.presentationMode === NavDestinationMode.DIALOG) {
@@ -483,7 +483,7 @@ export struct RNSScreen {
       this.distance= event.target.area.height as number;
 
       this.offsetY = this.positionY + event.offsetY;
-//      this.translateYValue = this.offsetY.toString(); 
+      this.translateYValue = this.offsetY.toString();
     } else {
       this.translation = event.offsetX;
       this.velocity = event.offsetX;
@@ -496,7 +496,7 @@ export struct RNSScreen {
       } else  {
         this.offsetX = this.positionX + event.offsetX;
       }
-//      this.translateXValue = this.offsetX.toString();
+      this.translateXValue = this.offsetX.toString();
     }
 
     let isInverted: boolean = this.stackAnimation === "slide_from_left";
@@ -580,9 +580,7 @@ export struct RNSScreen {
     .onShown(() => {
       RNSScreen.TOP_PAGEID = this.pageId;
       this.updateState(true)
-     setTimeout(()=>{
       this.updateHeaderConfigState()
-     }, 50)
       this.setScreenOrientation()
     })
     .onWillDisappear(() => {

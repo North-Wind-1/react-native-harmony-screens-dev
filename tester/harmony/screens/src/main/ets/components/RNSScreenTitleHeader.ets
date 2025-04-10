@@ -47,6 +47,7 @@ export struct RNSScreenTitleHeader {
   @State backTitleVisible: boolean | undefined = undefined;
   @State hideBackButton: boolean | undefined = undefined;
   @State backButtonInCustomView: boolean | undefined = undefined;
+  @State titleBarTranslucent: boolean = false;
   private cleanUpCallbacks: (() => void)[] = []
   public backBtnPressed: () => void = () => {
   }
@@ -124,6 +125,10 @@ export struct RNSScreenTitleHeader {
     if (this.backButtonInCustomView !== this.descriptor.rawProps["backButtonInCustomView"]) {
       this.backButtonInCustomView = this.descriptor.rawProps["backButtonInCustomView"]
     }
+
+    if (this.titleBarTranslucent !== this.descriptor.rawProps["translucent"]) {
+      this.titleBarTranslucent = this.descriptor.rawProps["translucent"];
+    }
   }
 
   build() {
@@ -182,7 +187,7 @@ export struct RNSScreenTitleHeader {
       .height(56)
       .layoutWeight(1)
       .padding({ left: 10, right: 10 })
-      .backgroundColor(this.backgroundColorValue)
+      .backgroundColor(this.titleBarTranslucent?Color.Transparent:this.backgroundColorValue)
     }
     .width("100%")
     .height(56)
